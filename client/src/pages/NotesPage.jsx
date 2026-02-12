@@ -1,10 +1,27 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Search, Pin, Trash2, ArrowLeft, X, StickyNote } from 'lucide-react';
+import { Plus, Search, Pin, Trash2, ArrowLeft, X, StickyNote, Check } from 'lucide-react';
 import RichTextEditor from '../components/RichTextEditor';
 import TagSelector from '../components/TagSelector';
 import { notesApi, goalsApi } from '../api/client';
+
+const TILE_COLORS = {
+  '': { label: 'White', light: '', dark: '', swatch: 'bg-white dark:bg-slate-800' },
+  blue: { label: 'Blue', light: 'bg-blue-100', dark: 'dark:bg-blue-900/40', swatch: 'bg-blue-200' },
+  red: { label: 'Red', light: 'bg-red-100', dark: 'dark:bg-red-900/40', swatch: 'bg-red-200' },
+  yellow: { label: 'Yellow', light: 'bg-yellow-100', dark: 'dark:bg-yellow-900/40', swatch: 'bg-yellow-200' },
+  orange: { label: 'Orange', light: 'bg-orange-100', dark: 'dark:bg-orange-900/40', swatch: 'bg-orange-200' },
+  green: { label: 'Green', light: 'bg-green-100', dark: 'dark:bg-green-900/40', swatch: 'bg-green-200' },
+  purple: { label: 'Purple', light: 'bg-purple-100', dark: 'dark:bg-purple-900/40', swatch: 'bg-purple-200' },
+  pink: { label: 'Pink', light: 'bg-pink-100', dark: 'dark:bg-pink-900/40', swatch: 'bg-pink-200' },
+};
+
+function getTileColorClasses(color) {
+  const c = TILE_COLORS[color || ''];
+  if (!c || (!c.light && !c.dark)) return '';
+  return `${c.light} ${c.dark}`;
+}
 
 function NoteEditor({ note, onClose, goals }) {
   const qc = useQueryClient();
@@ -14,6 +31,7 @@ function NoteEditor({ note, onClose, goals }) {
   );
   const [isPinned, setIsPinned] = useState(note?.isPinned || false);
   const [goalId, setGoalId] = useState(note?.goalId || '');
+  const [color, setColor] = useState(note?.color || '');
   const editorRef = useRef(null);
 
   const saveMut = useMutation({
@@ -39,6 +57,7 @@ function NoteEditor({ note, onClose, goals }) {
       content: editorRef.current?.getHTML() || '',
       tags: tags.join(','),
       isPinned,
+      color,
       goalId: goalId || null,
     });
   };
@@ -111,6 +130,28 @@ function NoteEditor({ note, onClose, goals }) {
         placeholder="Write your note..."
         editorRef={editorRef}
       />
+
+      {/* Tile color picker */}
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-gray-500 dark:text-gray-400">Tile Color</span>
+        <div className="flex gap-1.5">
+          {Object.entries(TILE_COLORS).map(([key, val]) => (
+            <button
+              key={key}
+              type="button"
+              title={val.label}
+              onClick={() => setColor(key)}
+              className={`w-7 h-7 rounded-full border-2 transition-transform hover:scale-110 flex items-center justify-center ${val.swatch} ${
+                color === key
+                  ? 'border-primary ring-2 ring-primary/30'
+                  : 'border-gray-300 dark:border-gray-600'
+              }`}
+            >
+              {color === key && <Check size={14} className="text-primary" />}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -212,39 +253,44 @@ export default function NotesPage() {
 
       {/* Notes grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {notes.map((note) => (
-          <button
-            key={note.id}
-            onClick={() => setEditing(note)}
-            className="text-left bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-4 hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-start justify-between">
-              <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
-                {note.title || 'Untitled'}
-              </h3>
-              {note.isPinned && <Pin size={14} className="text-amber-500 shrink-0" />}
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-3">
-              {note.content?.replace(/<[^>]*>/g, '').slice(0, 150)}
-            </p>
-            {note.tags && (
-              <div className="flex gap-1 mt-2 flex-wrap">
-                {note.tags.split(',').filter(Boolean).map((tag) => (
-                  <span
-                    key={tag}
-                    className="text-xs bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded"
-                  >
-                    {tag.trim()}
-                  </span>
-                ))}
+        {notes.map((note) => {
+          const colorClasses = getTileColorClasses(note.color);
+          return (
+            <button
+              key={note.id}
+              onClick={() => setEditing(note)}
+              className={`text-left rounded-xl shadow-sm border dark:border-slate-800 p-4 hover:shadow-md transition-shadow ${
+                colorClasses || 'bg-white dark:bg-slate-900'
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+                  {note.title || 'Untitled'}
+                </h3>
+                {note.isPinned && <Pin size={14} className="text-amber-500 shrink-0" />}
               </div>
-            )}
-            <div className="flex gap-3 mt-2 text-xs text-gray-400">
-              <span>Created: {new Date(note.createdAt).toLocaleDateString()}</span>
-              <span>Last Edit: {new Date(note.updatedAt).toLocaleDateString()}</span>
-            </div>
-          </button>
-        ))}
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-3">
+                {note.content?.replace(/<[^>]*>/g, '').slice(0, 150)}
+              </p>
+              {note.tags && (
+                <div className="flex gap-1 mt-2 flex-wrap">
+                  {note.tags.split(',').filter(Boolean).map((tag) => (
+                    <span
+                      key={tag}
+                      className="text-xs bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded"
+                    >
+                      {tag.trim()}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-3 mt-2 text-xs text-gray-400">
+                <span>Created: {new Date(note.createdAt).toLocaleDateString()}</span>
+                <span>Last Edit: {new Date(note.updatedAt).toLocaleDateString()}</span>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {notes.length === 0 && (

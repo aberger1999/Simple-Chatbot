@@ -37,6 +37,12 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        # Add color column to notes if it doesn't exist (SQLite migration)
+        with db.engine.connect() as conn:
+            columns = [row[1] for row in conn.execute(db.text("PRAGMA table_info(notes)"))]
+            if 'color' not in columns:
+                conn.execute(db.text("ALTER TABLE notes ADD COLUMN color VARCHAR(20) DEFAULT ''"))
+                conn.commit()
 
     # Register blueprints
     from server.routes.calendar import calendar_bp

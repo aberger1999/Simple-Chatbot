@@ -39,6 +39,7 @@ def create_note():
         content=data.get('content', ''),
         tags=normalized_tags,
         is_pinned=data.get('isPinned', False),
+        color=data.get('color', ''),
         goal_id=data.get('goalId'),
     )
     db.session.add(note)
@@ -66,6 +67,8 @@ def update_note(id):
         note.tags = ','.join(t.strip().lower() for t in raw_tags.split(',') if t.strip())
     if 'isPinned' in data:
         note.is_pinned = data['isPinned']
+    if 'color' in data:
+        note.color = data['color']
     if 'goalId' in data:
         note.goal_id = data['goalId']
 
