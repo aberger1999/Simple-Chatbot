@@ -82,6 +82,22 @@ export const journalApi = {
   updateEntry: (date, data) => request(`/journal/${date}`, { method: 'PUT', body: JSON.stringify(data) }),
 };
 
+// Habits
+export const habitsApi = {
+  getWeek: (date) => request(`/habits/week?date=${date}`),
+  logPreset: (date, category, data) =>
+    request(`/habits/log/${date}/${category}`, { method: 'PUT', body: JSON.stringify(data) }),
+  getCustomHabits: () => request('/habits/custom'),
+  createCustomHabit: (data) =>
+    request('/habits/custom', { method: 'POST', body: JSON.stringify(data) }),
+  updateCustomHabit: (id, data) =>
+    request(`/habits/custom/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteCustomHabit: (id) =>
+    request(`/habits/custom/${id}`, { method: 'DELETE' }),
+  logCustom: (date, habitId, data) =>
+    request(`/habits/custom-log/${date}/${habitId}`, { method: 'PUT', body: JSON.stringify(data) }),
+};
+
 // Chat
 export const chatApi = {
   send: (message, mode = 'ollama', sessionId = null) =>

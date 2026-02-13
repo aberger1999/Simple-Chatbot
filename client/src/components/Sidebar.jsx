@@ -6,6 +6,7 @@ import {
   Target,
   BookOpen,
   BookMarked,
+  Activity,
   Moon,
   Sun,
 } from 'lucide-react';
@@ -15,6 +16,7 @@ const links = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/calendar', icon: Calendar, label: 'Calendar' },
   { to: '/journal', icon: BookMarked, label: 'Journal' },
+  { to: '/habits', icon: Activity, label: 'Habits' },
   { to: '/notes', icon: StickyNote, label: 'Notes' },
   { to: '/goals', icon: Target, label: 'Goals' },
   { to: '/blog', icon: BookOpen, label: 'Blog' },

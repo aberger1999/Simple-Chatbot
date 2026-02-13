@@ -8,6 +8,7 @@ import GoalsPage from './pages/GoalsPage';
 import GoalDetailPage from './pages/GoalDetailPage';
 import BlogPage from './pages/BlogPage';
 import JournalPage from './pages/JournalPage';
+import HabitsPage from './pages/HabitsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="/goals" element={<GoalsPage />} />
             <Route path="/goals/:id" element={<GoalDetailPage />} />
             <Route path="/journal" element={<JournalPage />} />
+            <Route path="/habits" element={<HabitsPage />} />
             <Route path="/blog" element={<BlogPage />} />
           </Route>
         </Routes>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight, Save, Check, Calendar, Target } from 'lucide-react';
-import { journalApi, calendarApi, goalsApi } from '../api/client';
+import { ChevronLeft, ChevronRight, Save, Check, Calendar, Target, Activity, CheckCircle } from 'lucide-react';
+import { journalApi, calendarApi, goalsApi, habitsApi } from '../api/client';
 import RichTextEditor from '../components/RichTextEditor';
 
 function formatDate(date) {
@@ -43,6 +43,19 @@ export default function JournalPage() {
     queryFn: () => goalsApi.getGoals(),
   });
   const activeGoals = goals.filter((g) => g.status === 'active');
+
+  // Habits for selected date
+  const journalMonday = (() => {
+    const d = new Date(selectedDate);
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    return formatDate(d);
+  })();
+  const { data: habitWeek } = useQuery({
+    queryKey: ['habits', 'week', journalMonday],
+    queryFn: () => habitsApi.getWeek(journalMonday),
+  });
 
   // Sync fetched entry into local state
   useEffect(() => {
@@ -296,6 +309,87 @@ export default function JournalPage() {
                 ))}
               </ul>
             )}
+          </div>
+
+          {/* Habits Summary */}
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Activity size={16} className="text-primary" />
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                Habits
+              </h3>
+            </div>
+            {(() => {
+              const dayLogs = habitWeek?.logs[dateStr] || {};
+              const dayCustom = habitWeek?.customLogs[dateStr] || {};
+              const presetCategories = [
+                { key: 'sleep', label: 'Sleep' },
+                { key: 'fitness', label: 'Fitness' },
+                { key: 'finance', label: 'Finance' },
+                { key: 'diet_health', label: 'Diet & Health' },
+              ];
+              const completedPresets = presetCategories.filter(
+                (c) => dayLogs[c.key]?.isCompleted
+              );
+              const customHabits = habitWeek?.customHabits || [];
+              const completedCustom = customHabits.filter((h) => {
+                const cl = dayCustom[String(h.id)];
+                if (!cl?.value) return false;
+                if (h.trackingType === 'checkbox') return cl.value === 'true';
+                try { return parseFloat(cl.value) > 0; } catch { return false; }
+              });
+              const totalDone = completedPresets.length + completedCustom.length;
+              const totalAll = presetCategories.length + customHabits.length;
+
+              if (totalAll === 0) {
+                return <p className="text-xs text-gray-400">No habits tracked</p>;
+              }
+
+              return (
+                <>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                    {totalDone} of {totalAll} completed
+                  </p>
+                  <ul className="space-y-1.5">
+                    {presetCategories.map((c) => {
+                      const done = dayLogs[c.key]?.isCompleted;
+                      return (
+                        <li key={c.key} className="flex items-center gap-2 text-sm">
+                          {done ? (
+                            <CheckCircle size={14} className="text-green-500 shrink-0" />
+                          ) : (
+                            <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300 dark:border-slate-600 shrink-0" />
+                          )}
+                          <span className={done ? 'text-gray-800 dark:text-gray-200' : 'text-gray-400'}>
+                            {c.label}
+                          </span>
+                        </li>
+                      );
+                    })}
+                    {customHabits.map((h) => {
+                      const cl = dayCustom[String(h.id)];
+                      let done = false;
+                      if (cl?.value) {
+                        if (h.trackingType === 'checkbox') done = cl.value === 'true';
+                        else try { done = parseFloat(cl.value) > 0; } catch {}
+                      }
+                      return (
+                        <li key={h.id} className="flex items-center gap-2 text-sm">
+                          {done ? (
+                            <CheckCircle size={14} className="text-green-500 shrink-0" />
+                          ) : (
+                            <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300 dark:border-slate-600 shrink-0" />
+                          )}
+                          <span className={done ? 'text-gray-800 dark:text-gray-200' : 'text-gray-400'}>
+                            {h.name}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
+              );
+            })()}
           </div>
         </div>
       </div>
