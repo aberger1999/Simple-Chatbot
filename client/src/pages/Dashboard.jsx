@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Calendar, StickyNote, Target, Plus } from 'lucide-react';
+import { Calendar, StickyNote, Target, Plus, BookMarked } from 'lucide-react';
 import { calendarApi, notesApi, goalsApi } from '../api/client';
 
 export default function Dashboard() {
@@ -53,6 +53,12 @@ export default function Dashboard() {
             className="flex items-center gap-1 bg-primary hover:bg-primary-dark text-white text-sm px-3 py-2 rounded-lg"
           >
             <Plus size={16} /> Note
+          </Link>
+          <Link
+            to="/journal"
+            className="flex items-center gap-1 bg-primary hover:bg-primary-dark text-white text-sm px-3 py-2 rounded-lg"
+          >
+            <BookMarked size={16} /> Journal
           </Link>
           <Link
             to="/calendar?new=1"

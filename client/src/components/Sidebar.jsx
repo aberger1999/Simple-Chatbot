@@ -5,6 +5,7 @@ import {
   StickyNote,
   Target,
   BookOpen,
+  BookMarked,
   Moon,
   Sun,
 } from 'lucide-react';
@@ -13,6 +14,7 @@ import { useDarkMode } from '../hooks/useDarkMode';
 const links = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/calendar', icon: Calendar, label: 'Calendar' },
+  { to: '/journal', icon: BookMarked, label: 'Journal' },
   { to: '/notes', icon: StickyNote, label: 'Notes' },
   { to: '/goals', icon: Target, label: 'Goals' },
   { to: '/blog', icon: BookOpen, label: 'Blog' },

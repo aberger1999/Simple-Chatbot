@@ -34,6 +34,9 @@ def create_app():
     from server.models.blog_post import BlogPost  # noqa: F401
     from server.models.chat_message import ChatMessage  # noqa: F401
     from server.models.custom_tag import CustomTag  # noqa: F401
+    from server.models.milestone import Milestone  # noqa: F401
+    from server.models.sub_milestone import SubMilestone  # noqa: F401
+    from server.models.journal_entry import JournalEntry  # noqa: F401
 
     with app.app_context():
         db.create_all()
@@ -43,6 +46,11 @@ def create_app():
             if 'color' not in columns:
                 conn.execute(db.text("ALTER TABLE notes ADD COLUMN color VARCHAR(20) DEFAULT ''"))
                 conn.commit()
+            # Add progress_mode column to goals if it doesn't exist
+            goal_columns = [row[1] for row in conn.execute(db.text("PRAGMA table_info(goals)"))]
+            if 'progress_mode' not in goal_columns:
+                conn.execute(db.text("ALTER TABLE goals ADD COLUMN progress_mode VARCHAR(20) DEFAULT 'manual'"))
+                conn.commit()
 
     # Register blueprints
     from server.routes.calendar import calendar_bp
@@ -51,6 +59,8 @@ def create_app():
     from server.routes.blog import blog_bp
     from server.routes.chat import chat_bp
     from server.routes.tags import tags_bp
+    from server.routes.milestones import milestones_bp
+    from server.routes.journal import journal_bp
 
     app.register_blueprint(calendar_bp)
     app.register_blueprint(notes_bp)
@@ -58,6 +68,8 @@ def create_app():
     app.register_blueprint(blog_bp)
     app.register_blueprint(chat_bp)
     app.register_blueprint(tags_bp)
+    app.register_blueprint(milestones_bp)
+    app.register_blueprint(journal_bp)
 
     # SPA catch-all: serve index.html for non-API routes
     if os.path.isdir(client_dist):

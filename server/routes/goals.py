@@ -21,6 +21,7 @@ def create_goal():
         status=data.get('status', 'active'),
         target_date=datetime.fromisoformat(data['targetDate']) if data.get('targetDate') else None,
         progress=data.get('progress', 0),
+        progress_mode=data.get('progressMode', 'manual'),
         color=data.get('color', '#8b5cf6'),
     )
     db.session.add(goal)
@@ -53,6 +54,16 @@ def update_goal(id):
         goal.target_date = datetime.fromisoformat(data['targetDate']) if data['targetDate'] else None
     if 'progress' in data:
         goal.progress = data['progress']
+    if 'progressMode' in data:
+        goal.progress_mode = data['progressMode']
+        # Recalculate progress when switching to milestones mode
+        if data['progressMode'] == 'milestones':
+            milestones = goal.milestones
+            if milestones:
+                completed = sum(1 for m in milestones if m.is_completed)
+                goal.progress = round((completed / len(milestones)) * 100)
+            else:
+                goal.progress = 0
     if 'color' in data:
         goal.color = data['color']
 

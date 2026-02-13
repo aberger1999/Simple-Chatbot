@@ -14,6 +14,11 @@ export default function Layout() {
         e.preventDefault();
         chatToggleRef.current?.();
       }
+      // Ctrl+J — journal
+      if (e.ctrlKey && e.key === 'j') {
+        e.preventDefault();
+        navigate('/journal');
+      }
       // Ctrl+N — new note
       if (e.ctrlKey && e.key === 'n') {
         e.preventDefault();

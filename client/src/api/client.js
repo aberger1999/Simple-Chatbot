@@ -65,6 +65,23 @@ export const tagsApi = {
   deleteTag: (id) => request(`/tags/${id}`, { method: 'DELETE' }),
 };
 
+// Milestones
+export const milestonesApi = {
+  getMilestones: (goalId) => request(`/goals/${goalId}/milestones`),
+  createMilestone: (goalId, data) => request(`/goals/${goalId}/milestones`, { method: 'POST', body: JSON.stringify(data) }),
+  updateMilestone: (id, data) => request(`/milestones/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteMilestone: (id) => request(`/milestones/${id}`, { method: 'DELETE' }),
+  createSubMilestone: (milestoneId, data) => request(`/milestones/${milestoneId}/sub`, { method: 'POST', body: JSON.stringify(data) }),
+  updateSubMilestone: (id, data) => request(`/sub-milestones/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteSubMilestone: (id) => request(`/sub-milestones/${id}`, { method: 'DELETE' }),
+};
+
+// Journal
+export const journalApi = {
+  getEntry: (date) => request(`/journal/${date}`),
+  updateEntry: (date, data) => request(`/journal/${date}`, { method: 'PUT', body: JSON.stringify(data) }),
+};
+
 // Chat
 export const chatApi = {
   send: (message, mode = 'ollama', sessionId = null) =>

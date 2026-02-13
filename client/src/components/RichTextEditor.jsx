@@ -217,7 +217,7 @@ function MenuBar({ editor }) {
   );
 }
 
-export default function RichTextEditor({ content, placeholder, editorRef }) {
+export default function RichTextEditor({ content, placeholder, editorRef, onChange }) {
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -229,6 +229,7 @@ export default function RichTextEditor({ content, placeholder, editorRef }) {
       Highlight.configure({ multicolor: true }),
     ],
     content: content || '',
+    onUpdate: onChange ? () => onChange() : undefined,
   });
 
   // Expose editor instance to parent via ref

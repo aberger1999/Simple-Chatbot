@@ -5,7 +5,9 @@ import Dashboard from './pages/Dashboard';
 import CalendarPage from './pages/CalendarPage';
 import NotesPage from './pages/NotesPage';
 import GoalsPage from './pages/GoalsPage';
+import GoalDetailPage from './pages/GoalDetailPage';
 import BlogPage from './pages/BlogPage';
+import JournalPage from './pages/JournalPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,6 +29,8 @@ export default function App() {
             <Route path="/notes" element={<NotesPage />} />
             <Route path="/notes/:id" element={<NotesPage />} />
             <Route path="/goals" element={<GoalsPage />} />
+            <Route path="/goals/:id" element={<GoalDetailPage />} />
+            <Route path="/journal" element={<JournalPage />} />
             <Route path="/blog" element={<BlogPage />} />
           </Route>
         </Routes>

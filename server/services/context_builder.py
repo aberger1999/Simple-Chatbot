@@ -1,7 +1,9 @@
+import re
 from datetime import datetime, timedelta
 from server.models.calendar_event import CalendarEvent
 from server.models.goal import Goal
 from server.models.note import Note
+from server.models.journal_entry import JournalEntry
 
 
 def build_context():
@@ -33,7 +35,22 @@ def build_context():
     if goals:
         parts.append('\nActive goals:')
         for g in goals:
-            parts.append(f'- {g.title} ({g.progress}% complete)')
+            if g.progress_mode == 'milestones' and g.milestones:
+                completed = sum(1 for m in g.milestones if m.is_completed)
+                total = len(g.milestones)
+                parts.append(f'- {g.title} ({g.progress}% complete, {completed} of {total} milestones)')
+            else:
+                parts.append(f'- {g.title} ({g.progress}% complete)')
+
+    # Today's journal entry
+    today_journal = JournalEntry.query.filter_by(date=now.date()).first()
+    if today_journal:
+        parts.append('\nToday\'s journal:')
+        if today_journal.morning_intentions:
+            parts.append(f'- Morning intentions: {today_journal.morning_intentions[:200]}')
+        if today_journal.content:
+            stripped = re.sub(r'<[^>]+>', '', today_journal.content)[:200]
+            parts.append(f'- Notes: {stripped}')
 
     # Recent notes
     notes = Note.query.order_by(Note.updated_at.desc()).limit(5).all()
