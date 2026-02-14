@@ -1,4 +1,3 @@
-import json
 import re
 from datetime import datetime, timedelta
 from server.models.calendar_event import CalendarEvent
@@ -10,54 +9,56 @@ from server.models.custom_habit import CustomHabit
 from server.models.custom_habit_log import CustomHabitLog
 
 
+def _strip_html(text):
+    if not text:
+        return ''
+    return re.sub(r'<[^>]+>', '', text).strip()
+
+
 def build_context():
     now = datetime.utcnow()
+    today = now.date()
     week_ahead = now + timedelta(days=7)
 
     parts = [
-        'You are a helpful personal productivity assistant. '
-        'You have access to the user\'s calendar, notes, and goals. '
-        'Be concise and helpful. Today is '
+        'You are a personal productivity assistant embedded in the user\'s productivity hub. '
+        'You have access to their goals, journal entries, habits, calendar, and notes. '
+        'Use this data naturally to give relevant, thoughtful responses — reference specifics '
+        'when helpful, offer encouragement, suggest connections between their goals and activities, '
+        'and help them stay on track. Never just dump their data back at them. '
+        'Be warm, concise, and practical. Today is '
         + now.strftime('%A, %B %d, %Y') + '.'
     ]
-
-    # Upcoming events (next 7 days)
-    events = CalendarEvent.query.filter(
-        CalendarEvent.start >= now,
-        CalendarEvent.start <= week_ahead,
-    ).order_by(CalendarEvent.start).limit(10).all()
-
-    if events:
-        parts.append('\nUpcoming events (next 7 days):')
-        for e in events:
-            parts.append(
-                f'- {e.title} on {e.start.strftime("%a %b %d at %I:%M %p")}'
-            )
 
     # Active goals
     goals = Goal.query.filter_by(status='active').all()
     if goals:
-        parts.append('\nActive goals:')
+        parts.append('\n[Active Goals]')
         for g in goals:
-            if g.progress_mode == 'milestones' and g.milestones:
-                completed = sum(1 for m in g.milestones if m.is_completed)
-                total = len(g.milestones)
-                parts.append(f'- {g.title} ({g.progress}% complete, {completed} of {total} milestones)')
+            line = f'- {g.title} ({g.progress}% complete)'
+            if g.target_date:
+                parts.append(f'{line} — target: {g.target_date}')
             else:
-                parts.append(f'- {g.title} ({g.progress}% complete)')
+                parts.append(line)
 
-    # Today's journal entry
-    today_journal = JournalEntry.query.filter_by(date=now.date()).first()
-    if today_journal:
-        parts.append('\nToday\'s journal:')
-        if today_journal.morning_intentions:
-            parts.append(f'- Morning intentions: {today_journal.morning_intentions[:200]}')
-        if today_journal.content:
-            stripped = re.sub(r'<[^>]+>', '', today_journal.content)[:200]
-            parts.append(f'- Notes: {stripped}')
+    # Last 5 journal entries
+    journals = JournalEntry.query.order_by(
+        JournalEntry.date.desc()
+    ).limit(5).all()
+    if journals:
+        has_content = [j for j in journals if j.morning_intentions or j.content or j.evening_reflection]
+        if has_content:
+            parts.append('\n[Recent Journal Entries]')
+            for j in has_content:
+                parts.append(f'— {j.date.strftime("%a %b %d")}:')
+                if j.morning_intentions:
+                    parts.append(f'  Intentions: {_strip_html(j.morning_intentions)[:150]}')
+                if j.content:
+                    parts.append(f'  Notes: {_strip_html(j.content)[:150]}')
+                if j.evening_reflection:
+                    parts.append(f'  Reflection: {_strip_html(j.evening_reflection)[:150]}')
 
-    # Today's habits
-    today = now.date()
+    # Today's habit logs
     habit_logs = HabitLog.query.filter_by(date=today).all()
     custom_habits = CustomHabit.query.filter_by(is_active=True).all()
     custom_logs = CustomHabitLog.query.filter_by(date=today).all()
@@ -74,10 +75,7 @@ def build_context():
             activity = d.get('activityType', '?')
             duration = d.get('duration', '?')
             intensity = d.get('intensity', '?')
-            habit_parts.append(f'- Fitness: {activity} {duration}min ({intensity} intensity)')
-        elif log.category == 'finance' and log.is_completed:
-            spend = d.get('dailySpend', '?')
-            habit_parts.append(f'- Finance: ${spend} spent today')
+            habit_parts.append(f'- Fitness: {activity} {duration}min ({intensity})')
         elif log.category == 'diet_health' and log.is_completed:
             water = d.get('waterIntake', 0)
             mood = d.get('moodRating', '?')
@@ -99,15 +97,28 @@ def build_context():
                 habit_parts.append(f'- {habit.name}: {cl.value}/5')
 
     if habit_parts:
-        parts.append("\nToday's habits:")
+        parts.append("\n[Today's Habits]")
         parts.extend(habit_parts)
 
-    # Recent notes
+    # Upcoming events (next 7 days)
+    events = CalendarEvent.query.filter(
+        CalendarEvent.start >= now,
+        CalendarEvent.start <= week_ahead,
+    ).order_by(CalendarEvent.start).limit(10).all()
+
+    if events:
+        parts.append('\n[Upcoming Events]')
+        for e in events:
+            parts.append(
+                f'- {e.title} on {e.start.strftime("%a %b %d at %I:%M %p")}'
+            )
+
+    # Recent notes (titles + plain-text previews)
     notes = Note.query.order_by(Note.updated_at.desc()).limit(5).all()
     if notes:
-        parts.append('\nRecent notes:')
+        parts.append('\n[Recent Notes]')
         for n in notes:
-            preview = n.content[:100] if n.content else ''
+            preview = _strip_html(n.content)[:120]
             parts.append(f'- {n.title}: {preview}')
 
     return '\n'.join(parts)

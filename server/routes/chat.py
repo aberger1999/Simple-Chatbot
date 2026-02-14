@@ -1,9 +1,10 @@
+import json
 import uuid
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response, stream_with_context
 from server.models.base import db
 from server.models.chat_message import ChatMessage
 from server.services.legacy_chat import get_legacy_response
-from server.services.ollama_service import get_ollama_response
+from server.services.ollama_service import get_ollama_response, stream_ollama_response
 from server.services.context_builder import build_context
 
 chat_bp = Blueprint('chat', __name__)
@@ -47,6 +48,59 @@ def chat():
         'answer': response,
         'sessionId': session_id,
         'mode': mode,
+    })
+
+
+@chat_bp.route('/api/chat/stream', methods=['POST'])
+def chat_stream():
+    data = request.get_json()
+    message = data.get('message', '')
+    session_id = data.get('sessionId') or str(uuid.uuid4())
+
+    # Save user message
+    user_msg = ChatMessage(
+        role='user', content=message, mode='ollama', session_id=session_id
+    )
+    db.session.add(user_msg)
+    db.session.commit()
+
+    # Get conversation history
+    history = ChatMessage.query.filter_by(
+        session_id=session_id
+    ).order_by(ChatMessage.created_at.desc()).limit(20).all()
+    history.reverse()
+
+    messages = [{'role': m.role, 'content': m.content} for m in history]
+    context = build_context()
+
+    def generate():
+        full_response = []
+        # Send session ID as first event
+        yield f"data: {json.dumps({'sessionId': session_id})}\n\n"
+
+        try:
+            for token in stream_ollama_response(messages, context):
+                full_response.append(token)
+                yield f"data: {json.dumps({'token': token})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'token': f'Error: {str(e)}'})}\n\n"
+
+        # Save the complete assistant message
+        complete_text = ''.join(full_response)
+        if complete_text:
+            assistant_msg = ChatMessage(
+                role='assistant', content=complete_text, mode='ollama',
+                session_id=session_id
+            )
+            db.session.add(assistant_msg)
+            db.session.commit()
+
+        yield f"data: {json.dumps({'done': True})}\n\n"
+
+    return Response(stream_with_context(generate()), mimetype='text/event-stream', headers={
+        'Cache-Control': 'no-cache',
+        'X-Accel-Buffering': 'no',
+        'Connection': 'keep-alive',
     })
 
 

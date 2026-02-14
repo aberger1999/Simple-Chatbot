@@ -1,18 +1,66 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Calendar, StickyNote, Target, Plus, BookMarked } from 'lucide-react';
-import { calendarApi, notesApi, goalsApi } from '../api/client';
+import {
+  Calendar, StickyNote, Target, Plus, BookMarked, Clock,
+  CheckCircle2, Pencil, BookOpen, Flame, Rss, Activity,
+} from 'lucide-react';
+import { calendarApi, notesApi, goalsApi, activityApi } from '../api/client';
+
+function stripHtml(html) {
+  if (!html) return '';
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return doc.body.textContent || '';
+}
+
+function relativeTime(isoString) {
+  const now = new Date();
+  const then = new Date(isoString);
+  const diffMs = now - then;
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay === 1) return 'Yesterday';
+  return `${diffDay}d ago`;
+}
+
+const FEED_ICONS = {
+  note: StickyNote,
+  goal: Target,
+  event: Calendar,
+  journal: BookOpen,
+  habit: Flame,
+  blog: Rss,
+};
+
+const FEED_COLORS = {
+  note: 'text-amber-500 bg-amber-50 dark:bg-amber-500/10',
+  goal: 'text-blue-500 bg-blue-50 dark:bg-blue-500/10',
+  event: 'text-violet-500 bg-violet-50 dark:bg-violet-500/10',
+  journal: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10',
+  habit: 'text-orange-500 bg-orange-50 dark:bg-orange-500/10',
+  blog: 'text-pink-500 bg-pink-50 dark:bg-pink-500/10',
+};
 
 export default function Dashboard() {
   const today = new Date();
-  const endOfDay = new Date(today);
-  endOfDay.setHours(23, 59, 59);
-  const weekAhead = new Date(today);
-  weekAhead.setDate(weekAhead.getDate() + 7);
 
-  const { data: events = [] } = useQuery({
-    queryKey: ['events', 'today'],
-    queryFn: () => calendarApi.getEvents(today.toISOString(), weekAhead.toISOString()),
+  // Monday of this week
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  monday.setHours(0, 0, 0, 0);
+
+  // Sunday end of week
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
+
+  const { data: weekEvents = [] } = useQuery({
+    queryKey: ['events', 'week', monday.toISOString()],
+    queryFn: () => calendarApi.getEvents(monday.toISOString(), sunday.toISOString()),
   });
 
   const { data: notes = [] } = useQuery({
@@ -25,16 +73,43 @@ export default function Dashboard() {
     queryFn: () => goalsApi.getGoals(),
   });
 
-  const todayEvents = events.filter((e) => {
+  const { data: activityFeed = [] } = useQuery({
+    queryKey: ['activity-feed'],
+    queryFn: () => activityApi.getFeed(),
+  });
+
+  // Today's events (for the top card)
+  const todayEvents = weekEvents.filter((e) => {
     const start = new Date(e.start);
     return start.toDateString() === today.toDateString();
   });
+
+  // Split week events into upcoming (future) and happened (past)
+  const { upcomingEvents, pastEvents } = useMemo(() => {
+    const now = new Date();
+    const upcoming = [];
+    const past = [];
+    for (const e of weekEvents) {
+      const end = new Date(e.end || e.start);
+      if (end < now) {
+        past.push(e);
+      } else {
+        upcoming.push(e);
+      }
+    }
+    // Upcoming sorted by start ascending
+    upcoming.sort((a, b) => new Date(a.start) - new Date(b.start));
+    // Past sorted by start descending (most recent first)
+    past.sort((a, b) => new Date(b.start) - new Date(a.start));
+    return { upcomingEvents: upcoming, pastEvents: past };
+  }, [weekEvents]);
 
   const activeGoals = goals.filter((g) => g.status === 'active');
   const recentNotes = notes.slice(0, 4);
 
   return (
     <div>
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
@@ -69,12 +144,13 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Top 3-column cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Today's Events */}
         <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
           <div className="flex items-center gap-2 mb-4">
             <Calendar size={18} className="text-primary" />
-            <h2 className="font-semibold text-gray-900 dark:text-white">Today's Events</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-white">Today&apos;s Events</h2>
           </div>
           {todayEvents.length === 0 ? (
             <p className="text-sm text-gray-400">No events today</p>
@@ -150,7 +226,9 @@ export default function Dashboard() {
                   >
                     {n.title}
                   </Link>
-                  <p className="text-xs text-gray-400 truncate">{n.content?.slice(0, 60)}</p>
+                  <p className="text-xs text-gray-400 truncate">
+                    {stripHtml(n.content)?.slice(0, 80)}
+                  </p>
                 </li>
               ))}
             </ul>
@@ -161,17 +239,19 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Upcoming this week */}
-      {events.length > 0 && (
-        <div className="mt-6 bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
-          <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Upcoming This Week</h2>
+      {/* Upcoming This Week */}
+      <div className="mt-6 bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Clock size={18} className="text-primary" />
+          <h2 className="font-semibold text-gray-900 dark:text-white">Upcoming This Week</h2>
+        </div>
+        {upcomingEvents.length === 0 ? (
+          <p className="text-sm text-gray-400 py-2">Nothing else on the calendar this week — enjoy the free time!</p>
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {events.slice(0, 6).map((e) => (
+            {upcomingEvents.slice(0, 6).map((e) => (
               <div key={e.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
-                <div
-                  className="w-1 h-10 rounded-full shrink-0"
-                  style={{ backgroundColor: e.color }}
-                />
+                <div className="w-1 h-10 rounded-full shrink-0 bg-blue-500" />
                 <div>
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{e.title}</p>
                   <p className="text-xs text-gray-400">
@@ -187,8 +267,71 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
+        )}
+      </div>
+
+      {/* Happened This Week */}
+      <div className="mt-6 bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <CheckCircle2 size={18} className="text-gray-400" />
+          <h2 className="font-semibold text-gray-500 dark:text-gray-400">Happened This Week</h2>
         </div>
-      )}
+        {pastEvents.length === 0 ? (
+          <p className="text-sm text-gray-400 py-2">No past events this week yet — the week is just getting started!</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {pastEvents.slice(0, 6).map((e) => (
+              <div key={e.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800/60 rounded-lg">
+                <div className="w-1 h-10 rounded-full shrink-0 bg-gray-300 dark:bg-gray-600" />
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{e.title}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    {new Date(e.start).toLocaleDateString([], {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                    })}{' '}
+                    at{' '}
+                    {new Date(e.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Activity Feed */}
+      <div className="mt-6 bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Activity size={18} className="text-primary" />
+          <h2 className="font-semibold text-gray-900 dark:text-white">Activity Feed</h2>
+          <span className="text-xs text-gray-400 ml-auto">This week</span>
+        </div>
+        {activityFeed.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-6">No activity this week yet</p>
+        ) : (
+          <ul className="space-y-1">
+            {activityFeed.slice(0, 20).map((item, idx) => {
+              const Icon = FEED_ICONS[item.type] || Activity;
+              const colorClass = FEED_COLORS[item.type] || 'text-gray-500 bg-gray-50 dark:bg-slate-800';
+              return (
+                <li key={idx} className="flex items-center gap-3 py-2 border-b dark:border-slate-800 last:border-0">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${colorClass}`}>
+                    <Icon size={14} />
+                  </div>
+                  <p className="flex-1 text-sm text-gray-700 dark:text-gray-300 min-w-0 truncate">
+                    {item.description}
+                  </p>
+                  <span className="text-xs text-gray-400 shrink-0">
+                    {relativeTime(item.timestamp)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

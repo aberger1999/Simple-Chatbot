@@ -54,6 +54,11 @@ def create_app():
             if 'progress_mode' not in goal_columns:
                 conn.execute(db.text("ALTER TABLE goals ADD COLUMN progress_mode VARCHAR(20) DEFAULT 'manual'"))
                 conn.commit()
+            # Add icon column to custom_habits if it doesn't exist
+            habit_columns = [row[1] for row in conn.execute(db.text("PRAGMA table_info(custom_habits)"))]
+            if 'icon' not in habit_columns:
+                conn.execute(db.text("ALTER TABLE custom_habits ADD COLUMN icon VARCHAR(50) DEFAULT ''"))
+                conn.commit()
 
     # Register blueprints
     from server.routes.calendar import calendar_bp
@@ -65,6 +70,7 @@ def create_app():
     from server.routes.milestones import milestones_bp
     from server.routes.journal import journal_bp
     from server.routes.habits import habits_bp
+    from server.routes.activity import activity_bp
 
     app.register_blueprint(calendar_bp)
     app.register_blueprint(notes_bp)
@@ -75,6 +81,7 @@ def create_app():
     app.register_blueprint(milestones_bp)
     app.register_blueprint(journal_bp)
     app.register_blueprint(habits_bp)
+    app.register_blueprint(activity_bp)
 
     # SPA catch-all: serve index.html for non-API routes
     if os.path.isdir(client_dist):

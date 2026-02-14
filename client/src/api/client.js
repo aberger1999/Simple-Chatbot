@@ -87,6 +87,8 @@ export const habitsApi = {
   getWeek: (date) => request(`/habits/week?date=${date}`),
   logPreset: (date, category, data) =>
     request(`/habits/log/${date}/${category}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deletePresetLog: (date, category) =>
+    request(`/habits/log/${date}/${category}`, { method: 'DELETE' }),
   getCustomHabits: () => request('/habits/custom'),
   createCustomHabit: (data) =>
     request('/habits/custom', { method: 'POST', body: JSON.stringify(data) }),
@@ -96,6 +98,11 @@ export const habitsApi = {
     request(`/habits/custom/${id}`, { method: 'DELETE' }),
   logCustom: (date, habitId, data) =>
     request(`/habits/custom-log/${date}/${habitId}`, { method: 'PUT', body: JSON.stringify(data) }),
+};
+
+// Activity Feed
+export const activityApi = {
+  getFeed: () => request('/activity-feed'),
 };
 
 // Chat

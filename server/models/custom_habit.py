@@ -12,6 +12,7 @@ class CustomHabit(db.Model):
     unit = db.Column(db.String(50), nullable=True)
     frequency = db.Column(db.String(10), default='daily')
     is_active = db.Column(db.Boolean, default=True)
+    icon = db.Column(db.String(50), nullable=True, default='')
     position = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -22,6 +23,7 @@ class CustomHabit(db.Model):
         return {
             'id': self.id,
             'name': self.name,
+            'icon': self.icon or '',
             'trackingType': self.tracking_type,
             'targetValue': self.target_value,
             'unit': self.unit,

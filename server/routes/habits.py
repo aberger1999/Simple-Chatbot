@@ -129,6 +129,25 @@ def upsert_preset_log(date_str, category):
     return jsonify(log.to_dict())
 
 
+@habits_bp.route('/api/habits/log/<date_str>/<category>', methods=['DELETE'])
+def delete_preset_log(date_str, category):
+    if category not in VALID_CATEGORIES:
+        return jsonify({'error': f'Invalid category: {category}'}), 400
+
+    try:
+        d = date.fromisoformat(date_str)
+    except ValueError:
+        return jsonify({'error': 'Invalid date'}), 400
+
+    log = HabitLog.query.filter_by(date=d, category=category).first()
+    if not log:
+        return jsonify({'error': 'Log not found'}), 404
+
+    db.session.delete(log)
+    db.session.commit()
+    return jsonify({'message': 'Log deleted'}), 200
+
+
 @habits_bp.route('/api/habits/custom', methods=['GET'])
 def get_custom_habits():
     habits = CustomHabit.query.filter_by(is_active=True).order_by(CustomHabit.position).all()
@@ -144,6 +163,7 @@ def create_custom_habit():
         tracking_type=data.get('trackingType', 'checkbox'),
         target_value=data.get('targetValue'),
         unit=data.get('unit'),
+        icon=data.get('icon', ''),
         frequency=data.get('frequency', 'daily'),
         position=max_pos + 1,
     )
@@ -169,6 +189,8 @@ def update_custom_habit(id):
         habit.frequency = data['frequency']
     if 'isActive' in data:
         habit.is_active = data['isActive']
+    if 'icon' in data:
+        habit.icon = data['icon']
     if 'position' in data:
         habit.position = data['position']
 
