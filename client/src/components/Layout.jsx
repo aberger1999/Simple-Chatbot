@@ -24,6 +24,11 @@ export default function Layout() {
         e.preventDefault();
         navigate('/habits');
       }
+      // Ctrl+F — focus timer
+      if (e.ctrlKey && e.key === 'f') {
+        e.preventDefault();
+        navigate('/focus');
+      }
       // Ctrl+N — new note
       if (e.ctrlKey && e.key === 'n') {
         e.preventDefault();

@@ -100,6 +100,20 @@ export const habitsApi = {
     request(`/habits/custom-log/${date}/${habitId}`, { method: 'PUT', body: JSON.stringify(data) }),
 };
 
+// Focus Sessions
+export const focusApi = {
+  getSessions: (limit) => {
+    const params = new URLSearchParams();
+    if (limit) params.set('limit', limit);
+    return request(`/focus-sessions?${params}`);
+  },
+  getSession: (id) => request(`/focus-sessions/${id}`),
+  createSession: (data) => request('/focus-sessions', { method: 'POST', body: JSON.stringify(data) }),
+  updateSession: (id, data) => request(`/focus-sessions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteSession: (id) => request(`/focus-sessions/${id}`, { method: 'DELETE' }),
+  getStats: () => request('/focus-sessions/stats'),
+};
+
 // Activity Feed
 export const activityApi = {
   getFeed: () => request('/activity-feed'),

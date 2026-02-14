@@ -3,9 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
   Calendar, StickyNote, Target, Plus, BookMarked, Clock,
-  CheckCircle2, Pencil, BookOpen, Flame, Rss, Activity,
+  CheckCircle2, Pencil, BookOpen, Flame, Rss, Activity, Timer,
 } from 'lucide-react';
-import { calendarApi, notesApi, goalsApi, activityApi } from '../api/client';
+import { calendarApi, notesApi, goalsApi, activityApi, focusApi } from '../api/client';
 
 function stripHtml(html) {
   if (!html) return '';
@@ -34,6 +34,7 @@ const FEED_ICONS = {
   journal: BookOpen,
   habit: Flame,
   blog: Rss,
+  focus: Timer,
 };
 
 const FEED_COLORS = {
@@ -43,6 +44,7 @@ const FEED_COLORS = {
   journal: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10',
   habit: 'text-orange-500 bg-orange-50 dark:bg-orange-500/10',
   blog: 'text-pink-500 bg-pink-50 dark:bg-pink-500/10',
+  focus: 'text-cyan-500 bg-cyan-50 dark:bg-cyan-500/10',
 };
 
 export default function Dashboard() {
@@ -76,6 +78,11 @@ export default function Dashboard() {
   const { data: activityFeed = [] } = useQuery({
     queryKey: ['activity-feed'],
     queryFn: () => activityApi.getFeed(),
+  });
+
+  const { data: focusStats = {} } = useQuery({
+    queryKey: ['focus-sessions', 'stats'],
+    queryFn: focusApi.getStats,
   });
 
   // Today's events (for the top card)
@@ -144,8 +151,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Top 3-column cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Top cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Today's Events */}
         <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
           <div className="flex items-center gap-2 mb-4">
@@ -235,6 +242,27 @@ export default function Dashboard() {
           )}
           <Link to="/notes" className="text-xs text-primary hover:underline mt-3 block">
             View all notes
+          </Link>
+        </div>
+
+        {/* Focus Timer Stats */}
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Timer size={18} className="text-cyan-500" />
+            <h2 className="font-semibold text-gray-900 dark:text-white">Focus Timer</h2>
+          </div>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Total Minutes</span>
+              <span className="text-lg font-bold text-gray-900 dark:text-white">{focusStats.totalMinutes || 0}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Sessions</span>
+              <span className="text-lg font-bold text-gray-900 dark:text-white">{focusStats.completedSessions || 0}</span>
+            </div>
+          </div>
+          <Link to="/focus" className="text-xs text-primary hover:underline mt-3 block">
+            Start a session
           </Link>
         </div>
       </div>

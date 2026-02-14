@@ -7,6 +7,7 @@ from server.models.journal_entry import JournalEntry
 from server.models.habit_log import HabitLog
 from server.models.custom_habit import CustomHabit
 from server.models.custom_habit_log import CustomHabitLog
+from server.models.focus_session import FocusSession
 
 
 def _strip_html(text):
@@ -120,5 +121,16 @@ def build_context():
         for n in notes:
             preview = _strip_html(n.content)[:120]
             parts.append(f'- {n.title}: {preview}')
+
+    # Recent focus sessions
+    focus_sessions = FocusSession.query.order_by(
+        FocusSession.created_at.desc()
+    ).limit(5).all()
+    if focus_sessions:
+        parts.append('\n[Recent Focus Sessions]')
+        for fs in focus_sessions:
+            title = fs.title or 'Untitled'
+            duration_min = (fs.actual_duration or 0) // 60
+            parts.append(f'- {title}: {duration_min}min ({fs.status})')
 
     return '\n'.join(parts)

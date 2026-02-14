@@ -9,6 +9,7 @@ from server.models.habit_log import HabitLog
 from server.models.custom_habit import CustomHabit
 from server.models.custom_habit_log import CustomHabitLog
 from server.models.blog_post import BlogPost
+from server.models.focus_session import FocusSession
 
 activity_bp = Blueprint('activity', __name__)
 
@@ -174,6 +175,21 @@ def get_activity_feed():
                 'description': f'Updated blog post "{p.title}"',
                 'timestamp': p.updated_at.isoformat(),
             })
+
+    # Focus sessions this week
+    focus_sessions = FocusSession.query.filter(
+        FocusSession.created_at >= mon_dt,
+        FocusSession.created_at <= sun_dt,
+    ).all()
+    for fs in focus_sessions:
+        duration_min = (fs.actual_duration or 0) // 60
+        title = fs.title or 'Untitled session'
+        items.append({
+            'type': 'focus',
+            'action': fs.status,
+            'description': f'Focus session: "{title}" ({duration_min}min, {fs.status})',
+            'timestamp': fs.created_at.isoformat(),
+        })
 
     # Sort by timestamp descending (most recent first)
     items.sort(key=lambda x: x['timestamp'], reverse=True)
