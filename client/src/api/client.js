@@ -124,6 +124,18 @@ export const canvasApi = {
   deleteBoard: (id) => request(`/canvas/boards/${id}`, { method: 'DELETE' }),
 };
 
+// Todos
+export const todosApi = {
+  getLists: () => request('/todos/lists'),
+  createList: (name) => request('/todos/lists', { method: 'POST', body: JSON.stringify({ name }) }),
+  updateList: (id, data) => request(`/todos/lists/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteList: (id) => request(`/todos/lists/${id}`, { method: 'DELETE' }),
+  getItems: (listId) => request(`/todos/lists/${listId}/items`),
+  createItem: (listId, text) => request(`/todos/lists/${listId}/items`, { method: 'POST', body: JSON.stringify({ text }) }),
+  updateItem: (id, data) => request(`/todos/items/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteItem: (id) => request(`/todos/items/${id}`, { method: 'DELETE' }),
+};
+
 // Activity Feed
 export const activityApi = {
   getFeed: () => request('/activity-feed'),

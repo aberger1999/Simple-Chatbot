@@ -9,6 +9,7 @@ import {
   Activity,
   Timer,
   PenTool,
+  ListTodo,
   Moon,
   Sun,
 } from 'lucide-react';
@@ -20,6 +21,7 @@ const links = [
   { to: '/journal', icon: BookMarked, label: 'Journal' },
   { to: '/habits', icon: Activity, label: 'Habits' },
   { to: '/focus', icon: Timer, label: 'Focus Timer' },
+  { to: '/todos', icon: ListTodo, label: 'To-Do' },
   { to: '/notes', icon: StickyNote, label: 'Notes' },
   { to: '/goals', icon: Target, label: 'Goals' },
   { to: '/canvas', icon: PenTool, label: 'Canvas' },

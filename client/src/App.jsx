@@ -11,6 +11,7 @@ import JournalPage from './pages/JournalPage';
 import HabitsPage from './pages/HabitsPage';
 import FocusTimerPage from './pages/FocusTimerPage';
 import CanvasPage from './pages/CanvasPage';
+import TodoPage from './pages/TodoPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/focus" element={<FocusTimerPage />} />
             <Route path="/blog" element={<BlogPage />} />
             <Route path="/canvas" element={<CanvasPage />} />
+            <Route path="/todos" element={<TodoPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
