@@ -41,6 +41,7 @@ def create_app():
     from server.models.custom_habit import CustomHabit  # noqa: F401
     from server.models.custom_habit_log import CustomHabitLog  # noqa: F401
     from server.models.focus_session import FocusSession  # noqa: F401
+    from server.models.canvas_board import CanvasBoard  # noqa: F401
 
     with app.app_context():
         db.create_all()
@@ -73,6 +74,7 @@ def create_app():
     from server.routes.habits import habits_bp
     from server.routes.activity import activity_bp
     from server.routes.focus import focus_bp
+    from server.routes.canvas import canvas_bp
 
     app.register_blueprint(calendar_bp)
     app.register_blueprint(notes_bp)
@@ -85,6 +87,7 @@ def create_app():
     app.register_blueprint(habits_bp)
     app.register_blueprint(activity_bp)
     app.register_blueprint(focus_bp)
+    app.register_blueprint(canvas_bp)
 
     # SPA catch-all: serve index.html for non-API routes
     if os.path.isdir(client_dist):

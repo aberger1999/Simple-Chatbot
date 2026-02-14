@@ -1,11 +1,16 @@
 import { useEffect, useRef } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import ChatPanel from './ChatPanel';
+
+const FULL_BLEED_ROUTES = ['/canvas'];
 
 export default function Layout() {
   const chatToggleRef = useRef(null);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  const isFullBleed = FULL_BLEED_ROUTES.some((r) => pathname.startsWith(r));
 
   useEffect(() => {
     const handler = (e) => {
@@ -42,10 +47,14 @@ export default function Layout() {
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-slate-950">
       <Sidebar />
-      <main className="flex-1 overflow-auto">
-        <div className="p-6 max-w-7xl mx-auto">
+      <main className={`flex-1 ${isFullBleed ? 'overflow-hidden' : 'overflow-auto'}`}>
+        {isFullBleed ? (
           <Outlet />
-        </div>
+        ) : (
+          <div className="p-6 max-w-7xl mx-auto">
+            <Outlet />
+          </div>
+        )}
       </main>
       <ChatPanel toggleRef={chatToggleRef} />
     </div>

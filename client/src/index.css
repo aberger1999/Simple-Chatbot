@@ -466,3 +466,86 @@ body {
 .dark .tiptap p.is-editor-empty:first-child::before {
   color: #475569;
 }
+
+/* ==================================================================
+   React Flow / Canvas Page
+   ================================================================== */
+
+/* Canvas fills its container edge-to-edge */
+.canvas-flow {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Background grid */
+.canvas-flow .react-flow__background pattern line {
+  stroke: #e2e8f0;
+}
+.dark .canvas-flow .react-flow__background pattern line {
+  stroke: #1e293b;
+}
+
+/* Pane background (the area behind all nodes/edges) */
+.canvas-flow .react-flow__pane {
+  background: #f8fafc;
+}
+.dark .canvas-flow .react-flow__pane {
+  background: #0f172a;
+}
+
+/* Controls */
+.canvas-controls button {
+  background: #fff !important;
+  border-color: #e2e8f0 !important;
+  color: #475569;
+}
+.canvas-controls button:hover {
+  background: #f1f5f9 !important;
+}
+.dark .canvas-controls button {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #94a3b8;
+}
+.dark .canvas-controls button:hover {
+  background: #334155 !important;
+}
+.dark .canvas-controls svg {
+  fill: #94a3b8;
+}
+
+/* Minimap */
+.canvas-minimap {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+.dark .canvas-minimap {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+/* Handles */
+.react-flow__handle {
+  background: #6366f1 !important;
+  border: 2px solid #fff !important;
+  width: 8px;
+  height: 8px;
+}
+.dark .react-flow__handle {
+  border-color: #1e293b !important;
+}
+
+/* Edge labels */
+.react-flow__edge-text {
+  font-size: 11px;
+  fill: #64748b;
+}
+.dark .react-flow__edge-text {
+  fill: #94a3b8;
+}
+
+/* Attribution hide */
+.react-flow__attribution {
+  display: none;
+}

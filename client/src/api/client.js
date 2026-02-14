@@ -79,6 +79,7 @@ export const milestonesApi = {
 // Journal
 export const journalApi = {
   getEntry: (date) => request(`/journal/${date}`),
+  getRecent: (limit = 10) => request(`/journal/recent?limit=${limit}`),
   updateEntry: (date, data) => request(`/journal/${date}`, { method: 'PUT', body: JSON.stringify(data) }),
 };
 
@@ -112,6 +113,15 @@ export const focusApi = {
   updateSession: (id, data) => request(`/focus-sessions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteSession: (id) => request(`/focus-sessions/${id}`, { method: 'DELETE' }),
   getStats: () => request('/focus-sessions/stats'),
+};
+
+// Canvas Boards
+export const canvasApi = {
+  getBoards: () => request('/canvas/boards'),
+  getBoard: (id) => request(`/canvas/boards/${id}`),
+  createBoard: (data) => request('/canvas/boards', { method: 'POST', body: JSON.stringify(data) }),
+  updateBoard: (id, data) => request(`/canvas/boards/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteBoard: (id) => request(`/canvas/boards/${id}`, { method: 'DELETE' }),
 };
 
 // Activity Feed

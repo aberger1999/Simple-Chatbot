@@ -8,6 +8,7 @@ import {
   BookMarked,
   Activity,
   Timer,
+  PenTool,
   Moon,
   Sun,
 } from 'lucide-react';
@@ -21,6 +22,7 @@ const links = [
   { to: '/focus', icon: Timer, label: 'Focus Timer' },
   { to: '/notes', icon: StickyNote, label: 'Notes' },
   { to: '/goals', icon: Target, label: 'Goals' },
+  { to: '/canvas', icon: PenTool, label: 'Canvas' },
   { to: '/blog', icon: BookOpen, label: 'Blog' },
 ];
 
