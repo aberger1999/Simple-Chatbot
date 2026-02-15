@@ -72,7 +72,7 @@ export default function TagSelector({ selectedTags, onChange }) {
       }
       qc.invalidateQueries({ queryKey: ['tags'] });
       qc.invalidateQueries({ queryKey: ['notes'] });
-      qc.invalidateQueries({ queryKey: ['blog'] });
+      qc.invalidateQueries({ queryKey: ['thought-posts'] });
       setEditingTagId(null);
       setEditName('');
     },
@@ -87,7 +87,7 @@ export default function TagSelector({ selectedTags, onChange }) {
       }
       qc.invalidateQueries({ queryKey: ['tags'] });
       qc.invalidateQueries({ queryKey: ['notes'] });
-      qc.invalidateQueries({ queryKey: ['blog'] });
+      qc.invalidateQueries({ queryKey: ['thought-posts'] });
     },
   });
 

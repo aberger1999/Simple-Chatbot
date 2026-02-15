@@ -34,7 +34,7 @@ def get_goal(id):
     goal = Goal.query.get_or_404(id)
     result = goal.to_dict()
     result['notes'] = [n.to_dict() for n in goal.notes.all()]
-    result['blogPosts'] = [p.to_dict() for p in goal.blog_posts.all()]
+    result['thoughtPosts'] = [p.to_dict() for p in goal.thought_posts.all()]
     result['events'] = [e.to_dict() for e in goal.events.all()]
     return jsonify(result)
 

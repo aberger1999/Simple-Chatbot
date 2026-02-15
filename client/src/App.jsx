@@ -6,7 +6,7 @@ import CalendarPage from './pages/CalendarPage';
 import NotesPage from './pages/NotesPage';
 import GoalsPage from './pages/GoalsPage';
 import GoalDetailPage from './pages/GoalDetailPage';
-import BlogPage from './pages/BlogPage';
+import ThoughtBoardPage from './pages/ThoughtBoardPage';
 import JournalPage from './pages/JournalPage';
 import HabitsPage from './pages/HabitsPage';
 import FocusTimerPage from './pages/FocusTimerPage';
@@ -37,7 +37,7 @@ export default function App() {
             <Route path="/journal" element={<JournalPage />} />
             <Route path="/habits" element={<HabitsPage />} />
             <Route path="/focus" element={<FocusTimerPage />} />
-            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/thoughts" element={<ThoughtBoardPage />} />
             <Route path="/canvas" element={<CanvasPage />} />
             <Route path="/todos" element={<TodoPage />} />
           </Route>

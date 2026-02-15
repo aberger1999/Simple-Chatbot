@@ -8,7 +8,7 @@ from server.models.journal_entry import JournalEntry
 from server.models.habit_log import HabitLog
 from server.models.custom_habit import CustomHabit
 from server.models.custom_habit_log import CustomHabitLog
-from server.models.blog_post import BlogPost
+from server.models.thought_post import ThoughtPost
 from server.models.focus_session import FocusSession
 
 activity_bp = Blueprint('activity', __name__)
@@ -151,11 +151,11 @@ def get_activity_feed():
             'timestamp': cl.created_at.isoformat() if cl.created_at else cl.date.isoformat(),
         })
 
-    # Blog posts created or updated this week
-    posts = BlogPost.query.filter(
+    # Thought posts created or updated this week
+    posts = ThoughtPost.query.filter(
         db.or_(
-            db.and_(BlogPost.created_at >= mon_dt, BlogPost.created_at <= sun_dt),
-            db.and_(BlogPost.updated_at >= mon_dt, BlogPost.updated_at <= sun_dt),
+            db.and_(ThoughtPost.created_at >= mon_dt, ThoughtPost.created_at <= sun_dt),
+            db.and_(ThoughtPost.updated_at >= mon_dt, ThoughtPost.updated_at <= sun_dt),
         )
     ).all()
     for p in posts:
@@ -163,16 +163,16 @@ def get_activity_feed():
         updated_this_week = p.updated_at and mon_dt <= p.updated_at <= sun_dt
         if created_this_week:
             items.append({
-                'type': 'blog',
+                'type': 'thought',
                 'action': 'created',
-                'description': f'Published blog post "{p.title}"',
+                'description': f'Posted thought "{p.title}"',
                 'timestamp': p.created_at.isoformat(),
             })
         if updated_this_week and p.updated_at != p.created_at:
             items.append({
-                'type': 'blog',
+                'type': 'thought',
                 'action': 'updated',
-                'description': f'Updated blog post "{p.title}"',
+                'description': f'Updated thought "{p.title}"',
                 'timestamp': p.updated_at.isoformat(),
             })
 

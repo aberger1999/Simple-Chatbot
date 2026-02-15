@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
   Calendar, StickyNote, Target, Plus, BookMarked, Clock,
-  CheckCircle2, Pencil, BookOpen, Flame, Rss, Activity, Timer,
+  CheckCircle2, Pencil, BookOpen, Flame, MessageSquare, Activity, Timer,
 } from 'lucide-react';
 import { calendarApi, notesApi, goalsApi, activityApi, focusApi } from '../api/client';
 
@@ -33,7 +33,7 @@ const FEED_ICONS = {
   event: Calendar,
   journal: BookOpen,
   habit: Flame,
-  blog: Rss,
+  thought: MessageSquare,
   focus: Timer,
 };
 
@@ -43,7 +43,7 @@ const FEED_COLORS = {
   event: 'text-violet-500 bg-violet-50 dark:bg-violet-500/10',
   journal: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10',
   habit: 'text-orange-500 bg-orange-50 dark:bg-orange-500/10',
-  blog: 'text-pink-500 bg-pink-50 dark:bg-pink-500/10',
+  thought: 'text-pink-500 bg-pink-50 dark:bg-pink-500/10',
   focus: 'text-cyan-500 bg-cyan-50 dark:bg-cyan-500/10',
 };
 

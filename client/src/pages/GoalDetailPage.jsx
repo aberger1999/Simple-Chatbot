@@ -517,20 +517,20 @@ export default function GoalDetailPage() {
             </div>
           )}
 
-          {/* Blog Posts */}
-          {goal.blogPosts?.length > 0 && (
+          {/* Thought Posts */}
+          {goal.thoughtPosts?.length > 0 && (
             <div>
               <h3 className="flex items-center gap-2 font-medium text-sm text-gray-700 dark:text-gray-300 mb-2">
-                <BookOpen size={14} /> Linked Posts ({goal.blogPosts.length})
+                <BookOpen size={14} /> Linked Thoughts ({goal.thoughtPosts.length})
               </h3>
               <ul className="space-y-1">
-                {goal.blogPosts.map((p) => (
+                {goal.thoughtPosts.map((p) => (
                   <li key={p.id} className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-slate-800 rounded px-3 py-2">
                     <span>{p.title}</span>
                     <button
-                      onClick={() => navigate(`/blog?post=${p.id}`)}
+                      onClick={() => navigate('/thoughts')}
                       className="text-primary hover:text-primary-dark shrink-0 ml-2"
-                      title="Open post"
+                      title="Open thought board"
                     >
                       <ExternalLink size={14} />
                     </button>
@@ -540,7 +540,7 @@ export default function GoalDetailPage() {
             </div>
           )}
 
-          {!goal.notes?.length && !goal.events?.length && !goal.blogPosts?.length && (
+          {!goal.notes?.length && !goal.events?.length && !goal.thoughtPosts?.length && (
             <p className="text-sm text-gray-400">No linked items yet.</p>
           )}
         </div>

@@ -17,7 +17,7 @@ class Goal(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     notes = db.relationship('Note', back_populates='goal', lazy='dynamic')
-    blog_posts = db.relationship('BlogPost', back_populates='goal', lazy='dynamic')
+    thought_posts = db.relationship('ThoughtPost', back_populates='goal', lazy='dynamic')
     events = db.relationship('CalendarEvent', back_populates='goal', lazy='dynamic')
     milestones = db.relationship(
         'Milestone',

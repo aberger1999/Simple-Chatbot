@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from server.models.base import db
 from server.models.custom_tag import CustomTag
 from server.models.note import Note
-from server.models.blog_post import BlogPost
+from server.models.thought_post import ThoughtPost
 
 tags_bp = Blueprint('tags', __name__)
 
@@ -44,7 +44,7 @@ def create_tag():
 
 def _propagate_tag_rename(old_name, new_name):
     """Rename a tag across all notes and blog posts."""
-    for model in (Note, BlogPost):
+    for model in (Note, ThoughtPost):
         items = model.query.filter(model.tags.ilike(f'%{old_name}%')).all()
         for item in items:
             tags = [t.strip() for t in item.tags.split(',') if t.strip()]
@@ -54,7 +54,7 @@ def _propagate_tag_rename(old_name, new_name):
 
 def _remove_tag_from_items(tag_name):
     """Remove a tag from all notes and blog posts."""
-    for model in (Note, BlogPost):
+    for model in (Note, ThoughtPost):
         items = model.query.filter(model.tags.ilike(f'%{tag_name}%')).all()
         for item in items:
             tags = [t.strip() for t in item.tags.split(',') if t.strip()]

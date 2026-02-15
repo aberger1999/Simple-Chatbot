@@ -31,7 +31,10 @@ def create_app():
     from server.models.calendar_event import CalendarEvent  # noqa: F401
     from server.models.note import Note  # noqa: F401
     from server.models.goal import Goal  # noqa: F401
-    from server.models.blog_post import BlogPost  # noqa: F401
+    from server.models.community import Community  # noqa: F401
+    from server.models.thought_post import ThoughtPost  # noqa: F401
+    from server.models.comment import Comment  # noqa: F401
+    from server.models.vote import Vote  # noqa: F401
     from server.models.chat_message import ChatMessage  # noqa: F401
     from server.models.custom_tag import CustomTag  # noqa: F401
     from server.models.milestone import Milestone  # noqa: F401
@@ -62,12 +65,17 @@ def create_app():
             if 'icon' not in habit_columns:
                 conn.execute(db.text("ALTER TABLE custom_habits ADD COLUMN icon VARCHAR(50) DEFAULT ''"))
                 conn.commit()
+            # Drop legacy blog_posts table if it exists
+            tables = [row[0] for row in conn.execute(db.text("SELECT name FROM sqlite_master WHERE type='table'"))]
+            if 'blog_posts' in tables:
+                conn.execute(db.text("DROP TABLE blog_posts"))
+                conn.commit()
 
     # Register blueprints
     from server.routes.calendar import calendar_bp
     from server.routes.notes import notes_bp
     from server.routes.goals import goals_bp
-    from server.routes.blog import blog_bp
+    from server.routes.thoughts import thoughts_bp
     from server.routes.chat import chat_bp
     from server.routes.tags import tags_bp
     from server.routes.milestones import milestones_bp
@@ -81,7 +89,7 @@ def create_app():
     app.register_blueprint(calendar_bp)
     app.register_blueprint(notes_bp)
     app.register_blueprint(goals_bp)
-    app.register_blueprint(blog_bp)
+    app.register_blueprint(thoughts_bp)
     app.register_blueprint(chat_bp)
     app.register_blueprint(tags_bp)
     app.register_blueprint(milestones_bp)

@@ -4,7 +4,7 @@ import {
   Calendar,
   StickyNote,
   Target,
-  BookOpen,
+  MessageSquare,
   BookMarked,
   Activity,
   Timer,
@@ -25,7 +25,7 @@ const links = [
   { to: '/notes', icon: StickyNote, label: 'Notes' },
   { to: '/goals', icon: Target, label: 'Goals' },
   { to: '/canvas', icon: PenTool, label: 'Canvas' },
-  { to: '/blog', icon: BookOpen, label: 'Blog' },
+  { to: '/thoughts', icon: MessageSquare, label: 'Thoughts' },
 ];
 
 export default function Sidebar() {

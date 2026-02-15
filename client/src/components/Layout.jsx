@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import ChatPanel from './ChatPanel';
 
-const FULL_BLEED_ROUTES = ['/canvas', '/todos'];
+const FULL_BLEED_ROUTES = ['/canvas', '/todos', '/thoughts'];
 
 export default function Layout() {
   const chatToggleRef = useRef(null);

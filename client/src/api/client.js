@@ -48,13 +48,22 @@ export const goalsApi = {
   deleteGoal: (id) => request(`/goals/${id}`, { method: 'DELETE' }),
 };
 
-// Blog
-export const blogApi = {
-  getPosts: () => request('/blog'),
-  getPost: (id) => request(`/blog/${id}`),
-  createPost: (data) => request('/blog', { method: 'POST', body: JSON.stringify(data) }),
-  updatePost: (id, data) => request(`/blog/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  deletePost: (id) => request(`/blog/${id}`, { method: 'DELETE' }),
+// Thoughts
+export const thoughtsApi = {
+  getCommunities: () => request('/thoughts/communities'),
+  createCommunity: (name) => request('/thoughts/communities', { method: 'POST', body: JSON.stringify({ name }) }),
+  deleteCommunity: (id) => request(`/thoughts/communities/${id}`, { method: 'DELETE' }),
+  getPosts: (params = {}) => {
+    const q = new URLSearchParams(params);
+    return request(`/thoughts/posts?${q}`);
+  },
+  getPost: (id) => request(`/thoughts/posts/${id}`),
+  createPost: (data) => request('/thoughts/posts', { method: 'POST', body: JSON.stringify(data) }),
+  updatePost: (id, data) => request(`/thoughts/posts/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deletePost: (id) => request(`/thoughts/posts/${id}`, { method: 'DELETE' }),
+  createComment: (postId, data) => request(`/thoughts/posts/${postId}/comments`, { method: 'POST', body: JSON.stringify(data) }),
+  deleteComment: (id) => request(`/thoughts/comments/${id}`, { method: 'DELETE' }),
+  vote: (data) => request('/thoughts/vote', { method: 'POST', body: JSON.stringify(data) }),
 };
 
 // Tags
