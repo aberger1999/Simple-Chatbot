@@ -3,7 +3,7 @@ import uuid
 
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,7 +18,6 @@ router = APIRouter(prefix="")
 
 class ChatBody(BaseModel):
     message: str
-    mode: str = "ollama"
     sessionId: str | None = None
 
 
@@ -40,36 +39,32 @@ async def chat(
         user_id=user.id,
         role="user",
         content=body.message,
-        mode=body.mode,
+        mode="ollama",
         session_id=session_id,
     )
     db.add(user_msg)
     await db.flush()
 
-    if body.mode == "legacy":
-        from server.services.legacy_chat import get_legacy_response
-        response = get_legacy_response(body.message)
-    else:
-        # Get conversation history
-        result = await db.execute(
-            select(ChatMessage)
-            .where(ChatMessage.user_id == user.id, ChatMessage.session_id == session_id)
-            .order_by(ChatMessage.created_at.desc())
-            .limit(20)
-        )
-        history = list(result.scalars().all())
-        history.reverse()
+    # Get conversation history
+    result = await db.execute(
+        select(ChatMessage)
+        .where(ChatMessage.user_id == user.id, ChatMessage.session_id == session_id)
+        .order_by(ChatMessage.created_at.desc())
+        .limit(20)
+    )
+    history = list(result.scalars().all())
+    history.reverse()
 
-        messages = [{"role": m.role, "content": m.content} for m in history]
-        context = await build_context(db, user.id)
-        response = await get_ollama_response(messages, context)
+    messages = [{"role": m.role, "content": m.content} for m in history]
+    context = await build_context(db, user.id)
+    response = await get_ollama_response(messages, context)
 
     # Save assistant message
     assistant_msg = ChatMessage(
         user_id=user.id,
         role="assistant",
         content=response,
-        mode=body.mode,
+        mode="ollama",
         session_id=session_id,
     )
     db.add(assistant_msg)
@@ -78,7 +73,6 @@ async def chat(
     return {
         "answer": response,
         "sessionId": session_id,
-        "mode": body.mode,
     }
 
 

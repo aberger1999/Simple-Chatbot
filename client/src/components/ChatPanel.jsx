@@ -1,13 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageCircle, X, Send, Bot, User, ToggleLeft, ToggleRight, Loader2, AlertCircle } from 'lucide-react';
-import { chatApi } from '../api/client';
-
+import { MessageCircle, X, Send, Bot, User, Loader2, AlertCircle } from 'lucide-react';
 export default function ChatPanel({ toggleRef }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState('ollama');
   const [sessionId, setSessionId] = useState(null);
   const bottomRef = useRef(null);
   const abortRef = useRef(null);
@@ -154,37 +151,11 @@ export default function ChatPanel({ toggleRef }) {
     }
   }, [sessionId, appendToLastAssistant, setLastAssistantContent]);
 
-  const sendLegacy = useCallback(async (text) => {
-    setMessages((prev) => [...prev, { role: 'user', content: text }]);
-    setLoading(true);
-
-    try {
-      const data = await chatApi.send(text, 'legacy', sessionId);
-      setSessionId(data.sessionId);
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: data.answer },
-      ]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: 'Error connecting to server.' },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  }, [sessionId]);
-
   const send = () => {
     const text = input.trim();
     if (!text || loading) return;
     setInput('');
-
-    if (mode === 'ollama') {
-      sendStreaming(text);
-    } else {
-      sendLegacy(text);
-    }
+    sendStreaming(text);
   };
 
   const newSession = () => {
@@ -214,18 +185,7 @@ export default function ChatPanel({ toggleRef }) {
       >
         {/* Header */}
         <div className="bg-primary text-white px-4 py-3 flex items-center justify-between shrink-0">
-          <div>
-            <h2 className="font-semibold text-sm">
-              {mode === 'ollama' ? 'AI Assistant' : 'Legacy Bot (Sam)'}
-            </h2>
-            <button
-              onClick={() => setMode(mode === 'ollama' ? 'legacy' : 'ollama')}
-              className="text-xs text-indigo-200 hover:text-white flex items-center gap-1 mt-0.5"
-            >
-              {mode === 'ollama' ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
-              Switch to {mode === 'ollama' ? 'Legacy' : 'AI'}
-            </button>
-          </div>
+          <h2 className="font-semibold text-sm">AI Assistant</h2>
           <div className="flex items-center gap-2">
             <button
               onClick={newSession}
@@ -248,15 +208,11 @@ export default function ChatPanel({ toggleRef }) {
             <div className="text-center mt-8 space-y-2">
               <Bot size={32} className="text-primary/30 mx-auto" />
               <p className="text-sm text-gray-400">
-                {mode === 'ollama'
-                  ? 'Ask me about your schedule, goals, or anything!'
-                  : 'Chat with the legacy LangBot!'}
+                Ask me about your schedule, goals, or anything!
               </p>
-              {mode === 'ollama' && (
-                <p className="text-xs text-gray-300 dark:text-gray-600">
-                  Powered by Ollama (llama3.2)
-                </p>
-              )}
+              <p className="text-xs text-gray-300 dark:text-gray-600">
+                Powered by Ollama (llama3.2)
+              </p>
             </div>
           )}
           {messages.map((m, i) => {

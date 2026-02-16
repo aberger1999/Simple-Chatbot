@@ -152,10 +152,10 @@ export const activityApi = {
 
 // Chat
 export const chatApi = {
-  send: (message, mode = 'ollama', sessionId = null) =>
+  send: (message, sessionId = null) =>
     request('/chat', {
       method: 'POST',
-      body: JSON.stringify({ message, mode, sessionId }),
+      body: JSON.stringify({ message, sessionId }),
     }),
   getHistory: (sessionId) => request(`/chat/history?sessionId=${sessionId}`),
   getSessions: () => request('/chat/sessions'),

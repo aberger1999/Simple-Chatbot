@@ -13,9 +13,10 @@ env/
 .venv/
 .claude/
 
-# Trained model (regenerate with train.py)
-data.pth
-server/legacy/data.pth
+# Stale artifacts (should not reappear)
+nul
+_UL
+_ul-*
 
 # Database
 instance/

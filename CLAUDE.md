@@ -2,13 +2,13 @@
 
 ## What is this project?
 
-A personal productivity app with Calendar, Notes, Goals/Vision Board, Thoughts, Journal, Habits, Focus Timer, To-Do Lists, Canvas, and AI Chat. Uses JWT authentication with user-scoped data. The original PyTorch intent-based chatbot is preserved as "Legacy Mode" alongside the newer Ollama-powered AI assistant.
+A personal productivity app with Calendar, Notes, Goals/Vision Board, Thoughts, Journal, Habits, Focus Timer, To-Do Lists, Canvas, and AI Chat. Uses JWT authentication with user-scoped data.
 
 ## Tech Stack
 
 - **Backend:** FastAPI (async) + SQLAlchemy 2.0 (asyncpg) + PostgreSQL (Supabase)
 - **Frontend:** React 19 (Vite 7) + Tailwind CSS v4 + React Router v7
-- **AI:** Ollama (default model: llama3.2) + Legacy PyTorch chatbot
+- **AI:** Ollama (default model: llama3.2)
 - **Auth:** JWT (python-jose) + bcrypt (passlib)
 - **Key libs:** react-big-calendar, @tanstack/react-query, react-simplemde-editor, date-fns, lucide-react, httpx, pydantic-settings, alembic
 
@@ -42,9 +42,7 @@ server/                     FastAPI backend
   services/
     ollama_service.py       Async httpx calls to Ollama /api/chat
     context_builder.py      Async — injects user data into AI system prompt
-    legacy_chat.py          Wraps old PyTorch chatbot (lazy-loaded)
     recurrence.py           Pure Python recurring event expansion
-  legacy/                   Original chatbot files (model.py, chat.py, nltk_utils.py, train.py, intents.json)
 
 client/                     React frontend (Vite)
   src/
@@ -55,7 +53,7 @@ client/                     React frontend (Vite)
       Layout.jsx            Sidebar + Outlet + ChatPanel, keyboard shortcuts (Ctrl+K, Ctrl+N)
       Sidebar.jsx           Navigation + dark mode toggle + user display/logout
       ProtectedRoute.jsx    Route guard for authenticated routes
-      ChatPanel.jsx         Sliding drawer, ollama/legacy mode toggle
+      ChatPanel.jsx         Sliding AI chat drawer
     pages/
       LoginPage.jsx, RegisterPage.jsx
       Dashboard.jsx, CalendarPage.jsx, NotesPage.jsx, GoalsPage.jsx
@@ -115,7 +113,7 @@ alembic upgrade head                               # apply migrations
 - **react-big-calendar:** Controlled component — must pass `date`, `view`, `onNavigate`, `onView` props
 - **React Query:** 30s staleTime, 1 retry. Mutations invalidate relevant query keys
 - **Goals** are the hub entity — notes, thought posts, and calendar events link to a goal via `goal_id` FK
-- **Chat** supports two modes: `ollama` (async LLM with context injection) and `legacy` (PyTorch bag-of-words)
+- **Chat** uses Ollama with async LLM streaming and user context injection
 - **Alembic** for schema migrations; `create_all` also runs at startup for dev convenience
 
 ## Database
@@ -149,7 +147,6 @@ All prefixed with `/api`. All except auth require Bearer token.
 - **Tailwind v4 dark mode:** Must use `@custom-variant dark` in CSS, not `darkMode: 'class'` in a config file. Tailwind v4 has no `tailwind.config.js` — configuration is CSS-first
 - **react-big-calendar styling:** All calendar CSS lives in `index.css` with explicit light and dark mode selectors
 - **DateCellWrapper:** Uses `React.cloneElement` to inject content into existing calendar cells — do NOT wrap children in extra divs
-- **Legacy chatbot:** Requires `data.pth` (trained model weights) in `server/legacy/`. Generate by running `python -m server.legacy.train`
 - **Models use camelCase** in their `to_dict()` JSON output (e.g., `goalId`, `allDay`, `sessionId`)
 - **Alembic uses sync driver** (psycopg2) while the app uses async (asyncpg). The `config.py` `async_database_url` property handles this conversion
 - **Auth tokens:** Frontend stores JWT in localStorage and sends it as `Authorization: Bearer <token>` header
