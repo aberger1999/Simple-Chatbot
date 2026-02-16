@@ -2,14 +2,22 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   ChevronLeft, ChevronRight, Type, Square, StickyNote,
-  Image, Layers, Target, BookMarked,
+  Image, Layers, Target, BookMarked, Diamond, Circle, Columns,
+  Upload, CheckSquare, Code, Table,
 } from 'lucide-react';
 import { goalsApi, notesApi, journalApi } from '../../api/client';
 
 const NODE_PALETTE = [
   { type: 'text', label: 'Text', icon: Type },
   { type: 'box', label: 'Box', icon: Square },
+  { type: 'diamond', label: 'Decision', icon: Diamond },
+  { type: 'oval', label: 'Oval', icon: Circle },
+  { type: 'parallelogram', label: 'I/O', icon: Columns },
   { type: 'stickyNote', label: 'Sticky Note', icon: StickyNote },
+  { type: 'imageUpload', label: 'Image', icon: Upload },
+  { type: 'checklist', label: 'Checklist', icon: CheckSquare },
+  { type: 'codeBlock', label: 'Code', icon: Code },
+  { type: 'table', label: 'Table', icon: Table },
   { type: 'image', label: 'Image URL', icon: Image },
   { type: 'section', label: 'Section', icon: Layers },
 ];

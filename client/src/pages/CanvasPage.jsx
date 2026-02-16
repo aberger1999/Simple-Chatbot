@@ -21,6 +21,8 @@ import { canvasApi } from '../api/client';
 import { nodeTypes } from '../components/canvas/CanvasNodes';
 import CanvasContextMenu from '../components/canvas/CanvasContextMenu';
 import CanvasSidePanel from '../components/canvas/CanvasSidePanel';
+import EdgeToolbar from '../components/canvas/EdgeToolbar';
+import EdgeContextMenu from '../components/canvas/EdgeContextMenu';
 
 const MODES = [
   { id: 'flowchart', label: 'Flowchart', icon: GitBranch },
@@ -51,6 +53,9 @@ function CanvasInner() {
   const [mode, setMode] = useState('flowchart');
   const [boardName, setBoardName] = useState('');
   const [contextMenu, setContextMenu] = useState(null);
+  const [selectedEdgeId, setSelectedEdgeId] = useState(null);
+  const [edgeToolbarPos, setEdgeToolbarPos] = useState(null);
+  const [edgeContextMenu, setEdgeContextMenu] = useState(null);
   const [saveStatus, setSaveStatus] = useState('');
   const boardDropdownRef = useRef(null);
 
@@ -112,7 +117,7 @@ function CanvasInner() {
 
     const loadedNodes = (board.nodes || []).map((n) => ({
       ...n,
-      data: { ...n.data, onLabelChange: handleLabelChange, onDescriptionChange: handleDescriptionChange },
+      data: { ...n.data, onLabelChange: handleLabelChange, onDescriptionChange: handleDescriptionChange, onDataChange: handleDataChange },
     }));
     setNodes(loadedNodes);
     setEdges(board.edges || []);
@@ -141,7 +146,7 @@ function CanvasInner() {
     if (!activeBoardId) return;
     const viewport = reactFlow.getViewport();
     const cleanNodes = nodes.map((n) => {
-      const { onLabelChange, onDescriptionChange, ...cleanData } = n.data;
+      const { onLabelChange, onDescriptionChange, onDataChange, ...cleanData } = n.data;
       return { ...n, data: cleanData };
     });
     saveBoardMut.mutate({
@@ -169,6 +174,12 @@ function CanvasInner() {
     );
   }, []);
 
+  const handleDataChange = useCallback((nodeId, updates) => {
+    setNodes((nds) =>
+      nds.map((n) => (n.id === nodeId ? { ...n, data: { ...n.data, ...updates } } : n))
+    );
+  }, []);
+
   const onNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
     []
@@ -183,14 +194,15 @@ function CanvasInner() {
     if (mode === 'flowchart') {
       return {
         type: 'smoothstep',
-        markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
+        arrowStyle: 'filled',
         animated: false,
       };
     }
     if (mode === 'mindMap') {
-      return { type: 'default', animated: false };
+      return { type: 'default', arrowStyle: 'none', animated: true };
     }
-    return { type: 'default', hidden: true };
+    // visionBoard
+    return { type: 'default', arrowStyle: 'none', animated: true };
   }, [mode]);
 
   const onConnect = useCallback(
@@ -216,6 +228,13 @@ function CanvasInner() {
     const defaults = {
       text: { label: '', width: isVision ? 200 : undefined },
       box: { label: '', description: '' },
+      diamond: { label: '' },
+      oval: { label: '' },
+      parallelogram: { label: '' },
+      imageUpload: { label: '', imageBase64: '' },
+      checklist: { label: 'Checklist', checklistItems: [{ id: '1', text: '', checked: false }] },
+      codeBlock: { label: '', codeContent: '', codeLanguage: 'javascript' },
+      table: { label: '', tableData: [['', '', ''], ['', '', ''], ['', '', '']] },
       stickyNote: { label: '', stickyColor: 'yellow' },
       image: { label: '', imageUrl: '' },
       section: { label: 'Section' },
@@ -229,6 +248,7 @@ function CanvasInner() {
         ...defaults[type],
         onLabelChange: handleLabelChange,
         onDescriptionChange: handleDescriptionChange,
+        onDataChange: handleDataChange,
       },
       ...(isVision && type !== 'section' ? { style: { minWidth: 200 } } : {}),
     };
@@ -287,10 +307,51 @@ function CanvasInner() {
     if (newNode) setNodes((nds) => [...nds, newNode]);
   }
 
+  // -- Edge handlers --
+  const onEdgeClick = useCallback((event, edge) => {
+    event.stopPropagation();
+    setSelectedEdgeId(edge.id);
+    setEdgeToolbarPos({ x: event.clientX, y: event.clientY });
+    setEdgeContextMenu(null);
+    setContextMenu(null);
+  }, []);
+
+  const onEdgeContextMenu = useCallback((event, edge) => {
+    event.preventDefault();
+    setEdgeContextMenu({ x: event.clientX, y: event.clientY, edgeId: edge.id });
+    setSelectedEdgeId(null);
+    setEdgeToolbarPos(null);
+    setContextMenu(null);
+  }, []);
+
+  const updateEdge = useCallback((edgeId, updates) => {
+    setEdges((eds) => eds.map((e) => (e.id === edgeId ? { ...e, ...updates } : e)));
+  }, []);
+
+  function deleteEdge(edgeId) {
+    setEdges((eds) => eds.filter((e) => e.id !== edgeId));
+    setSelectedEdgeId(null);
+    setEdgeToolbarPos(null);
+  }
+
+  function applyStyleToAll(edgeId) {
+    const source = edges.find((e) => e.id === edgeId);
+    if (!source) return;
+    const { animated, arrowStyle, type } = source;
+    setEdges((eds) => eds.map((e) => ({ ...e, animated, arrowStyle, type })));
+  }
+
+  function clearEdgeSelection() {
+    setSelectedEdgeId(null);
+    setEdgeToolbarPos(null);
+    setEdgeContextMenu(null);
+  }
+
   // -- Context menu --
   const onNodeContextMenu = useCallback((event, node) => {
     event.preventDefault();
     setContextMenu({ x: event.clientX, y: event.clientY, nodeId: node.id, nodeData: node.data });
+    clearEdgeSelection();
   }, []);
 
   function handleDeleteNode(nodeId) {
@@ -301,12 +362,12 @@ function CanvasInner() {
   function handleDuplicateNode(nodeId) {
     const original = nodes.find((n) => n.id === nodeId);
     if (!original) return;
-    const { onLabelChange, onDescriptionChange, ...cleanData } = original.data;
+    const { onLabelChange, onDescriptionChange, onDataChange, ...cleanData } = original.data;
     const newNode = {
       ...original,
       id: getNodeId(),
       position: { x: original.position.x + 30, y: original.position.y + 30 },
-      data: { ...cleanData, onLabelChange: handleLabelChange, onDescriptionChange: handleDescriptionChange },
+      data: { ...cleanData, onLabelChange: handleLabelChange, onDescriptionChange: handleDescriptionChange, onDataChange: handleDataChange },
     };
     setNodes((nds) => [...nds, newNode]);
   }
@@ -355,13 +416,37 @@ function CanvasInner() {
     setEdges((eds) => [...eds, newEdge]);
   }
 
-  // Apply mode-specific edge visibility
-  const displayEdges = mode === 'visionBoard'
-    ? edges.map((e) => ({ ...e, hidden: true }))
-    : edges;
+  // Apply stored edge visuals (arrowStyle → markers, label styling)
+  const displayEdges = edges.map((e) => {
+    const result = { ...e };
+
+    // Compute markers from arrowStyle
+    if (e.arrowStyle) {
+      delete result.markerEnd;
+      delete result.markerStart;
+      if (e.arrowStyle === 'open') {
+        result.markerEnd = { type: MarkerType.Arrow, width: 16, height: 16 };
+      } else if (e.arrowStyle === 'filled') {
+        result.markerEnd = { type: MarkerType.ArrowClosed, width: 16, height: 16 };
+      } else if (e.arrowStyle === 'double') {
+        result.markerEnd = { type: MarkerType.ArrowClosed, width: 16, height: 16 };
+        result.markerStart = { type: MarkerType.ArrowClosed, width: 16, height: 16 };
+      }
+      // 'none' — no markers
+    }
+
+    // Label pill styling
+    if (e.label) {
+      result.labelStyle = { fontSize: 11, fontWeight: 600 };
+      result.labelBgStyle = { fill: '#ffffff', fillOpacity: 0.92, rx: 6, ry: 6 };
+      result.labelBgPadding = [6, 4];
+    }
+
+    return result;
+  });
 
   const defaultEdgeOptions = mode === 'flowchart'
-    ? { type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 } }
+    ? { type: 'smoothstep' }
     : { type: 'default' };
 
   return (
@@ -470,7 +555,9 @@ function CanvasInner() {
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
               onNodeContextMenu={onNodeContextMenu}
-              onClick={() => setContextMenu(null)}
+              onEdgeClick={onEdgeClick}
+              onEdgeContextMenu={onEdgeContextMenu}
+              onPaneClick={() => { setContextMenu(null); clearEdgeSelection(); }}
               nodeTypes={nodeTypes}
               defaultEdgeOptions={defaultEdgeOptions}
               fitView
@@ -511,6 +598,26 @@ function CanvasInner() {
               onNavigate={handleNavigate}
               onAddChild={handleAddChild}
               showAddChild={mode === 'mindMap'}
+            />
+          )}
+
+          {selectedEdgeId && edgeToolbarPos && (
+            <EdgeToolbar
+              edge={edges.find((e) => e.id === selectedEdgeId) || {}}
+              position={edgeToolbarPos}
+              onUpdate={updateEdge}
+              onClose={clearEdgeSelection}
+            />
+          )}
+
+          {edgeContextMenu && (
+            <EdgeContextMenu
+              x={edgeContextMenu.x}
+              y={edgeContextMenu.y}
+              edgeId={edgeContextMenu.edgeId}
+              onClose={() => setEdgeContextMenu(null)}
+              onDelete={deleteEdge}
+              onApplyStyleToAll={applyStyleToAll}
             />
           )}
         </div>
