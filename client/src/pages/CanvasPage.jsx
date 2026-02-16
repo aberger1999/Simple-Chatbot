@@ -477,10 +477,9 @@ function CanvasInner() {
               className="canvas-flow"
             >
               <Background gap={20} size={1} />
-              <Controls position="bottom-right" className="canvas-controls" />
+              <Controls position="bottom-right" className="canvas-controls" style={{ marginBottom: 70 }} />
               <MiniMap
-                position="bottom-right"
-                style={{ marginBottom: 50 }}
+                position="bottom-left"
                 maskColor="rgba(0,0,0,0.1)"
                 className="canvas-minimap"
               />

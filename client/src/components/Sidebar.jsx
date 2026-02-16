@@ -12,8 +12,10 @@ import {
   ListTodo,
   Moon,
   Sun,
+  LogOut,
 } from 'lucide-react';
 import { useDarkMode } from '../hooks/useDarkMode';
+import { useAuth } from '../hooks/useAuth';
 
 const links = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -30,6 +32,7 @@ const links = [
 
 export default function Sidebar() {
   const [dark, setDark] = useDarkMode();
+  const { user, logout } = useAuth();
 
   return (
     <aside className="w-56 bg-sidebar text-white flex flex-col shrink-0 h-screen sticky top-0">
@@ -56,6 +59,18 @@ export default function Sidebar() {
         ))}
       </nav>
       <div className="p-4 border-t border-sidebar-hover">
+        {user && (
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs text-indigo-200 truncate">{user.name || user.email}</span>
+            <button
+              onClick={logout}
+              className="text-indigo-400 hover:text-white transition-colors"
+              title="Sign out"
+            >
+              <LogOut size={14} />
+            </button>
+          </div>
+        )}
         <button
           onClick={() => setDark(!dark)}
           className="flex items-center gap-2 text-xs text-indigo-300 hover:text-white transition-colors w-full"
