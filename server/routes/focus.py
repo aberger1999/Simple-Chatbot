@@ -1,82 +1,174 @@
 import json
-from flask import Blueprint, request, jsonify
-from server.models.base import db
-from server.models.focus_session import FocusSession
+from typing import Optional
 
-focus_bp = Blueprint('focus', __name__)
+from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from server.database import get_db
+from server.auth import get_current_user
+from server.models.focus import FocusSession
+
+router = APIRouter(prefix="")
 
 
-@focus_bp.route('/api/focus-sessions', methods=['GET'])
-def get_sessions():
-    limit = request.args.get('limit', type=int)
-    query = FocusSession.query.order_by(FocusSession.created_at.desc())
+class FocusCreate(BaseModel):
+    title: Optional[str] = ""
+    notes: Optional[str] = ""
+    plannedDuration: int
+    actualDuration: int
+    status: Optional[str] = "completed"
+    goalIds: Optional[list] = []
+    habitIds: Optional[list] = []
+    habitCategories: Optional[list] = []
+
+
+class FocusUpdate(BaseModel):
+    title: Optional[str] = None
+    notes: Optional[str] = None
+    goalIds: Optional[list] = None
+    habitIds: Optional[list] = None
+    habitCategories: Optional[list] = None
+
+
+@router.get("/focus-sessions")
+async def get_sessions(
+    limit: Optional[int] = None,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    query = (
+        select(FocusSession)
+        .where(FocusSession.user_id == user.id)
+        .order_by(FocusSession.created_at.desc())
+    )
     if limit:
         query = query.limit(limit)
-    sessions = query.all()
-    return jsonify([s.to_dict() for s in sessions])
+    result = await db.execute(query)
+    return [s.to_dict() for s in result.scalars().all()]
 
 
-@focus_bp.route('/api/focus-sessions/stats', methods=['GET'])
-def get_stats():
-    total = FocusSession.query.count()
-    completed = FocusSession.query.filter_by(status='completed').count()
-    total_minutes = db.session.query(
-        db.func.coalesce(db.func.sum(FocusSession.actual_duration), 0)
-    ).scalar() // 60
-    return jsonify({
-        'totalSessions': total,
-        'completedSessions': completed,
-        'totalMinutes': total_minutes,
-    })
-
-
-@focus_bp.route('/api/focus-sessions', methods=['POST'])
-def create_session():
-    data = request.get_json()
-    session = FocusSession(
-        title=data.get('title', ''),
-        notes=data.get('notes', ''),
-        planned_duration=data['plannedDuration'],
-        actual_duration=data['actualDuration'],
-        status=data.get('status', 'completed'),
-        goal_ids=json.dumps(data.get('goalIds', [])),
-        habit_ids=json.dumps(data.get('habitIds', [])),
-        habit_categories=json.dumps(data.get('habitCategories', [])),
+@router.get("/focus-sessions/stats")
+async def get_stats(
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    total_result = await db.execute(
+        select(func.count(FocusSession.id)).where(FocusSession.user_id == user.id)
     )
-    db.session.add(session)
-    db.session.commit()
-    return jsonify(session.to_dict()), 201
+    total = total_result.scalar()
+
+    completed_result = await db.execute(
+        select(func.count(FocusSession.id)).where(
+            FocusSession.user_id == user.id,
+            FocusSession.status == "completed",
+        )
+    )
+    completed = completed_result.scalar()
+
+    minutes_result = await db.execute(
+        select(func.coalesce(func.sum(FocusSession.actual_duration), 0)).where(
+            FocusSession.user_id == user.id
+        )
+    )
+    total_minutes = minutes_result.scalar() // 60
+
+    return {
+        "totalSessions": total,
+        "completedSessions": completed,
+        "totalMinutes": total_minutes,
+    }
 
 
-@focus_bp.route('/api/focus-sessions/<int:id>', methods=['GET'])
-def get_session(id):
-    session = FocusSession.query.get_or_404(id)
-    return jsonify(session.to_dict())
+@router.post("/focus-sessions")
+async def create_session(
+    body: FocusCreate,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    session = FocusSession(
+        user_id=user.id,
+        title=body.title,
+        notes=body.notes,
+        planned_duration=body.plannedDuration,
+        actual_duration=body.actualDuration,
+        status=body.status,
+        goal_ids=json.dumps(body.goalIds),
+        habit_ids=json.dumps(body.habitIds),
+        habit_categories=json.dumps(body.habitCategories),
+    )
+    db.add(session)
+    await db.flush()
+    await db.refresh(session)
+    return JSONResponse(content=session.to_dict(), status_code=201)
 
 
-@focus_bp.route('/api/focus-sessions/<int:id>', methods=['PUT'])
-def update_session(id):
-    session = FocusSession.query.get_or_404(id)
-    data = request.get_json()
-
-    if 'title' in data:
-        session.title = data['title']
-    if 'notes' in data:
-        session.notes = data['notes']
-    if 'goalIds' in data:
-        session.goal_ids = json.dumps(data['goalIds'])
-    if 'habitIds' in data:
-        session.habit_ids = json.dumps(data['habitIds'])
-    if 'habitCategories' in data:
-        session.habit_categories = json.dumps(data['habitCategories'])
-
-    db.session.commit()
-    return jsonify(session.to_dict())
+@router.get("/focus-sessions/{id}")
+async def get_session(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(FocusSession).where(
+            FocusSession.id == id, FocusSession.user_id == user.id
+        )
+    )
+    session = result.scalar_one_or_none()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return session.to_dict()
 
 
-@focus_bp.route('/api/focus-sessions/<int:id>', methods=['DELETE'])
-def delete_session(id):
-    session = FocusSession.query.get_or_404(id)
-    db.session.delete(session)
-    db.session.commit()
-    return jsonify({'message': 'Session deleted'}), 200
+@router.put("/focus-sessions/{id}")
+async def update_session(
+    id: int,
+    body: FocusUpdate,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(FocusSession).where(
+            FocusSession.id == id, FocusSession.user_id == user.id
+        )
+    )
+    session = result.scalar_one_or_none()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    if body.title is not None:
+        session.title = body.title
+    if body.notes is not None:
+        session.notes = body.notes
+    if body.goalIds is not None:
+        session.goal_ids = json.dumps(body.goalIds)
+    if body.habitIds is not None:
+        session.habit_ids = json.dumps(body.habitIds)
+    if body.habitCategories is not None:
+        session.habit_categories = json.dumps(body.habitCategories)
+
+    await db.flush()
+    await db.refresh(session)
+    return session.to_dict()
+
+
+@router.delete("/focus-sessions/{id}")
+async def delete_session(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(FocusSession).where(
+            FocusSession.id == id, FocusSession.user_id == user.id
+        )
+    )
+    session = result.scalar_one_or_none()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    await db.delete(session)
+    await db.flush()
+    return {"message": "Session deleted"}

@@ -1,140 +1,208 @@
 import json
 import uuid
-from flask import Blueprint, request, jsonify, Response, stream_with_context
-from server.models.base import db
+
+from pydantic import BaseModel
+from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse, JSONResponse
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from server.database import get_db
+from server.auth import get_current_user
 from server.models.chat_message import ChatMessage
-from server.services.legacy_chat import get_legacy_response
 from server.services.ollama_service import get_ollama_response, stream_ollama_response
 from server.services.context_builder import build_context
 
-chat_bp = Blueprint('chat', __name__)
+router = APIRouter(prefix="")
 
 
-@chat_bp.route('/api/chat', methods=['POST'])
-def chat():
-    data = request.get_json()
-    message = data.get('message', '')
-    mode = data.get('mode', 'ollama')
-    session_id = data.get('sessionId') or str(uuid.uuid4())
+class ChatBody(BaseModel):
+    message: str
+    mode: str = "ollama"
+    sessionId: str | None = None
+
+
+class StreamBody(BaseModel):
+    message: str
+    sessionId: str | None = None
+
+
+@router.post("/chat")
+async def chat(
+    body: ChatBody,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    session_id = body.sessionId or str(uuid.uuid4())
 
     # Save user message
     user_msg = ChatMessage(
-        role='user', content=message, mode=mode, session_id=session_id
+        user_id=user.id,
+        role="user",
+        content=body.message,
+        mode=body.mode,
+        session_id=session_id,
     )
-    db.session.add(user_msg)
-    db.session.commit()
+    db.add(user_msg)
+    await db.flush()
 
-    if mode == 'legacy':
-        response = get_legacy_response(message)
+    if body.mode == "legacy":
+        from server.services.legacy_chat import get_legacy_response
+        response = get_legacy_response(body.message)
     else:
         # Get conversation history
-        history = ChatMessage.query.filter_by(
-            session_id=session_id
-        ).order_by(ChatMessage.created_at.desc()).limit(20).all()
+        result = await db.execute(
+            select(ChatMessage)
+            .where(ChatMessage.user_id == user.id, ChatMessage.session_id == session_id)
+            .order_by(ChatMessage.created_at.desc())
+            .limit(20)
+        )
+        history = list(result.scalars().all())
         history.reverse()
 
-        messages = [{'role': m.role, 'content': m.content} for m in history]
-        context = build_context()
-        response = get_ollama_response(messages, context)
+        messages = [{"role": m.role, "content": m.content} for m in history]
+        context = await build_context(db, user.id)
+        response = await get_ollama_response(messages, context)
 
     # Save assistant message
     assistant_msg = ChatMessage(
-        role='assistant', content=response, mode=mode, session_id=session_id
+        user_id=user.id,
+        role="assistant",
+        content=response,
+        mode=body.mode,
+        session_id=session_id,
     )
-    db.session.add(assistant_msg)
-    db.session.commit()
+    db.add(assistant_msg)
+    await db.flush()
 
-    return jsonify({
-        'answer': response,
-        'sessionId': session_id,
-        'mode': mode,
-    })
+    return {
+        "answer": response,
+        "sessionId": session_id,
+        "mode": body.mode,
+    }
 
 
-@chat_bp.route('/api/chat/stream', methods=['POST'])
-def chat_stream():
-    data = request.get_json()
-    message = data.get('message', '')
-    session_id = data.get('sessionId') or str(uuid.uuid4())
+@router.post("/chat/stream")
+async def chat_stream(
+    body: StreamBody,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    session_id = body.sessionId or str(uuid.uuid4())
 
     # Save user message
     user_msg = ChatMessage(
-        role='user', content=message, mode='ollama', session_id=session_id
+        user_id=user.id,
+        role="user",
+        content=body.message,
+        mode="ollama",
+        session_id=session_id,
     )
-    db.session.add(user_msg)
-    db.session.commit()
+    db.add(user_msg)
+    await db.flush()
 
     # Get conversation history
-    history = ChatMessage.query.filter_by(
-        session_id=session_id
-    ).order_by(ChatMessage.created_at.desc()).limit(20).all()
+    result = await db.execute(
+        select(ChatMessage)
+        .where(ChatMessage.user_id == user.id, ChatMessage.session_id == session_id)
+        .order_by(ChatMessage.created_at.desc())
+        .limit(20)
+    )
+    history = list(result.scalars().all())
     history.reverse()
 
-    messages = [{'role': m.role, 'content': m.content} for m in history]
-    context = build_context()
+    messages = [{"role": m.role, "content": m.content} for m in history]
+    context = await build_context(db, user.id)
 
-    def generate():
+    async def generate():
         full_response = []
-        # Send session ID as first event
         yield f"data: {json.dumps({'sessionId': session_id})}\n\n"
 
         try:
-            for token in stream_ollama_response(messages, context):
+            async for token in stream_ollama_response(messages, context):
                 full_response.append(token)
                 yield f"data: {json.dumps({'token': token})}\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'token': f'Error: {str(e)}'})}\n\n"
 
         # Save the complete assistant message
-        complete_text = ''.join(full_response)
+        complete_text = "".join(full_response)
         if complete_text:
-            assistant_msg = ChatMessage(
-                role='assistant', content=complete_text, mode='ollama',
-                session_id=session_id
-            )
-            db.session.add(assistant_msg)
-            db.session.commit()
+            from server.database import AsyncSessionLocal
+
+            async with AsyncSessionLocal() as save_db:
+                try:
+                    assistant_msg = ChatMessage(
+                        user_id=user.id,
+                        role="assistant",
+                        content=complete_text,
+                        mode="ollama",
+                        session_id=session_id,
+                    )
+                    save_db.add(assistant_msg)
+                    await save_db.commit()
+                except Exception:
+                    await save_db.rollback()
 
         yield f"data: {json.dumps({'done': True})}\n\n"
 
-    return Response(stream_with_context(generate()), mimetype='text/event-stream', headers={
-        'Cache-Control': 'no-cache',
-        'X-Accel-Buffering': 'no',
-        'Connection': 'keep-alive',
-    })
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
 
 
-@chat_bp.route('/api/chat/history', methods=['GET'])
-def get_history():
-    session_id = request.args.get('sessionId')
-    if not session_id:
-        return jsonify([])
+@router.get("/chat/history")
+async def get_history(
+    sessionId: str | None = None,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    if not sessionId:
+        return []
 
-    messages = ChatMessage.query.filter_by(
-        session_id=session_id
-    ).order_by(ChatMessage.created_at).all()
-    return jsonify([m.to_dict() for m in messages])
-
-
-@chat_bp.route('/api/chat/sessions', methods=['GET'])
-def get_sessions():
-    sessions = db.session.query(
-        ChatMessage.session_id,
-        db.func.min(ChatMessage.created_at).label('started'),
-        db.func.max(ChatMessage.created_at).label('last_message'),
-        db.func.count(ChatMessage.id).label('message_count'),
-    ).group_by(ChatMessage.session_id).order_by(
-        db.func.max(ChatMessage.created_at).desc()
-    ).all()
-
-    return jsonify([{
-        'sessionId': s.session_id,
-        'started': s.started.isoformat(),
-        'lastMessage': s.last_message.isoformat(),
-        'messageCount': s.message_count,
-    } for s in sessions])
+    result = await db.execute(
+        select(ChatMessage)
+        .where(ChatMessage.user_id == user.id, ChatMessage.session_id == sessionId)
+        .order_by(ChatMessage.created_at)
+    )
+    return [m.to_dict() for m in result.scalars().all()]
 
 
-@chat_bp.route('/api/chat/sessions', methods=['POST'])
-def create_session():
-    return jsonify({'sessionId': str(uuid.uuid4())})
+@router.get("/chat/sessions")
+async def get_sessions(
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(
+            ChatMessage.session_id,
+            func.min(ChatMessage.created_at).label("started"),
+            func.max(ChatMessage.created_at).label("last_message"),
+            func.count(ChatMessage.id).label("message_count"),
+        )
+        .where(ChatMessage.user_id == user.id)
+        .group_by(ChatMessage.session_id)
+        .order_by(func.max(ChatMessage.created_at).desc())
+    )
+    return [
+        {
+            "sessionId": row.session_id,
+            "started": row.started.isoformat(),
+            "lastMessage": row.last_message.isoformat(),
+            "messageCount": row.message_count,
+        }
+        for row in result.all()
+    ]
+
+
+@router.post("/chat/sessions")
+async def create_session(
+    user=Depends(get_current_user),
+):
+    return {"sessionId": str(uuid.uuid4())}

@@ -1,136 +1,172 @@
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from server.models.calendar_event import CalendarEvent
 from server.models.goal import Goal
 from server.models.note import Note
-from server.models.journal_entry import JournalEntry
-from server.models.habit_log import HabitLog
-from server.models.custom_habit import CustomHabit
-from server.models.custom_habit_log import CustomHabitLog
-from server.models.focus_session import FocusSession
+from server.models.journal import JournalEntry
+from server.models.habit import HabitLog, CustomHabit, CustomHabitLog
+from server.models.focus import FocusSession
 
 
 def _strip_html(text):
     if not text:
-        return ''
-    return re.sub(r'<[^>]+>', '', text).strip()
+        return ""
+    return re.sub(r"<[^>]+>", "", text).strip()
 
 
-def build_context():
-    now = datetime.utcnow()
+async def build_context(db: AsyncSession, user_id: int) -> str:
+    now = datetime.now(timezone.utc)
     today = now.date()
     week_ahead = now + timedelta(days=7)
 
     parts = [
-        'You are a personal productivity assistant embedded in the user\'s productivity hub. '
-        'You have access to their goals, journal entries, habits, calendar, and notes. '
-        'Use this data naturally to give relevant, thoughtful responses — reference specifics '
-        'when helpful, offer encouragement, suggest connections between their goals and activities, '
-        'and help them stay on track. Never just dump their data back at them. '
-        'Be warm, concise, and practical. Today is '
-        + now.strftime('%A, %B %d, %Y') + '.'
+        "You are a personal productivity assistant embedded in the user's productivity hub. "
+        "You have access to their goals, journal entries, habits, calendar, and notes. "
+        "Use this data naturally to give relevant, thoughtful responses — reference specifics "
+        "when helpful, offer encouragement, suggest connections between their goals and activities, "
+        "and help them stay on track. Never just dump their data back at them. "
+        "Be warm, concise, and practical. Today is "
+        + now.strftime("%A, %B %d, %Y") + "."
     ]
 
     # Active goals
-    goals = Goal.query.filter_by(status='active').all()
+    result = await db.execute(
+        select(Goal).where(Goal.user_id == user_id, Goal.status == "active")
+    )
+    goals = result.scalars().all()
     if goals:
-        parts.append('\n[Active Goals]')
+        parts.append("\n[Active Goals]")
         for g in goals:
-            line = f'- {g.title} ({g.progress}% complete)'
+            line = f"- {g.title} ({g.progress}% complete)"
             if g.target_date:
-                parts.append(f'{line} — target: {g.target_date}')
+                parts.append(f"{line} — target: {g.target_date}")
             else:
                 parts.append(line)
 
     # Last 5 journal entries
-    journals = JournalEntry.query.order_by(
-        JournalEntry.date.desc()
-    ).limit(5).all()
+    result = await db.execute(
+        select(JournalEntry)
+        .where(JournalEntry.user_id == user_id)
+        .order_by(JournalEntry.date.desc())
+        .limit(5)
+    )
+    journals = result.scalars().all()
     if journals:
         has_content = [j for j in journals if j.morning_intentions or j.content or j.evening_reflection]
         if has_content:
-            parts.append('\n[Recent Journal Entries]')
+            parts.append("\n[Recent Journal Entries]")
             for j in has_content:
-                parts.append(f'— {j.date.strftime("%a %b %d")}:')
+                parts.append(f"— {j.date.strftime('%a %b %d')}:")
                 if j.morning_intentions:
-                    parts.append(f'  Intentions: {_strip_html(j.morning_intentions)[:150]}')
+                    parts.append(f"  Intentions: {_strip_html(j.morning_intentions)[:150]}")
                 if j.content:
-                    parts.append(f'  Notes: {_strip_html(j.content)[:150]}')
+                    parts.append(f"  Notes: {_strip_html(j.content)[:150]}")
                 if j.evening_reflection:
-                    parts.append(f'  Reflection: {_strip_html(j.evening_reflection)[:150]}')
+                    parts.append(f"  Reflection: {_strip_html(j.evening_reflection)[:150]}")
 
     # Today's habit logs
-    habit_logs = HabitLog.query.filter_by(date=today).all()
-    custom_habits = CustomHabit.query.filter_by(is_active=True).all()
-    custom_logs = CustomHabitLog.query.filter_by(date=today).all()
+    result = await db.execute(
+        select(HabitLog).where(HabitLog.user_id == user_id, HabitLog.date == today)
+    )
+    habit_logs = result.scalars().all()
+
+    result = await db.execute(
+        select(CustomHabit).where(CustomHabit.user_id == user_id, CustomHabit.is_active == True)
+    )
+    custom_habits = result.scalars().all()
+
+    result = await db.execute(
+        select(CustomHabitLog).where(CustomHabitLog.user_id == user_id, CustomHabitLog.date == today)
+    )
+    custom_logs = result.scalars().all()
     custom_log_map = {cl.custom_habit_id: cl for cl in custom_logs}
 
     habit_parts = []
     for log in habit_logs:
         d = log.parsed_data
-        if log.category == 'sleep' and log.is_completed:
-            hours = d.get('hours', '?')
-            quality = d.get('quality', '?')
-            habit_parts.append(f'- Sleep: {hours} hours, quality {quality}/5')
-        elif log.category == 'fitness' and log.is_completed:
-            activity = d.get('activityType', '?')
-            duration = d.get('duration', '?')
-            intensity = d.get('intensity', '?')
-            habit_parts.append(f'- Fitness: {activity} {duration}min ({intensity})')
-        elif log.category == 'diet_health' and log.is_completed:
-            water = d.get('waterIntake', 0)
-            mood = d.get('moodRating', '?')
-            habit_parts.append(f'- Diet & Health: {water} glasses water, mood {mood}/5')
+        if log.category == "sleep" and log.is_completed:
+            hours = d.get("hours", "?")
+            quality = d.get("quality", "?")
+            habit_parts.append(f"- Sleep: {hours} hours, quality {quality}/5")
+        elif log.category == "fitness" and log.is_completed:
+            activity = d.get("activityType", "?")
+            duration = d.get("duration", "?")
+            intensity = d.get("intensity", "?")
+            habit_parts.append(f"- Fitness: {activity} {duration}min ({intensity})")
+        elif log.category == "diet_health" and log.is_completed:
+            water = d.get("waterIntake", 0)
+            mood = d.get("moodRating", "?")
+            habit_parts.append(f"- Diet & Health: {water} glasses water, mood {mood}/5")
 
     for habit in custom_habits:
         cl = custom_log_map.get(habit.id)
         if cl and cl.value:
-            if habit.tracking_type == 'checkbox' and cl.value == 'true':
-                habit_parts.append(f'- {habit.name}: completed')
-            elif habit.tracking_type in ('number', 'duration'):
+            if habit.tracking_type == "checkbox" and cl.value == "true":
+                habit_parts.append(f"- {habit.name}: completed")
+            elif habit.tracking_type in ("number", "duration"):
                 try:
                     val = float(cl.value)
                     if val > 0:
-                        habit_parts.append(f'- {habit.name}: {cl.value} {habit.unit or ""}')
+                        habit_parts.append(f"- {habit.name}: {cl.value} {habit.unit or ''}")
                 except (ValueError, TypeError):
                     pass
-            elif habit.tracking_type == 'rating':
-                habit_parts.append(f'- {habit.name}: {cl.value}/5')
+            elif habit.tracking_type == "rating":
+                habit_parts.append(f"- {habit.name}: {cl.value}/5")
 
     if habit_parts:
         parts.append("\n[Today's Habits]")
         parts.extend(habit_parts)
 
     # Upcoming events (next 7 days)
-    events = CalendarEvent.query.filter(
-        CalendarEvent.start >= now,
-        CalendarEvent.start <= week_ahead,
-    ).order_by(CalendarEvent.start).limit(10).all()
-
+    result = await db.execute(
+        select(CalendarEvent)
+        .where(
+            CalendarEvent.user_id == user_id,
+            CalendarEvent.start >= now,
+            CalendarEvent.start <= week_ahead,
+        )
+        .order_by(CalendarEvent.start)
+        .limit(10)
+    )
+    events = result.scalars().all()
     if events:
-        parts.append('\n[Upcoming Events]')
+        parts.append("\n[Upcoming Events]")
         for e in events:
             parts.append(
-                f'- {e.title} on {e.start.strftime("%a %b %d at %I:%M %p")}'
+                f"- {e.title} on {e.start.strftime('%a %b %d at %I:%M %p')}"
             )
 
     # Recent notes (titles + plain-text previews)
-    notes = Note.query.order_by(Note.updated_at.desc()).limit(5).all()
+    result = await db.execute(
+        select(Note)
+        .where(Note.user_id == user_id)
+        .order_by(Note.updated_at.desc())
+        .limit(5)
+    )
+    notes = result.scalars().all()
     if notes:
-        parts.append('\n[Recent Notes]')
+        parts.append("\n[Recent Notes]")
         for n in notes:
             preview = _strip_html(n.content)[:120]
-            parts.append(f'- {n.title}: {preview}')
+            parts.append(f"- {n.title}: {preview}")
 
     # Recent focus sessions
-    focus_sessions = FocusSession.query.order_by(
-        FocusSession.created_at.desc()
-    ).limit(5).all()
+    result = await db.execute(
+        select(FocusSession)
+        .where(FocusSession.user_id == user_id)
+        .order_by(FocusSession.created_at.desc())
+        .limit(5)
+    )
+    focus_sessions = result.scalars().all()
     if focus_sessions:
-        parts.append('\n[Recent Focus Sessions]')
+        parts.append("\n[Recent Focus Sessions]")
         for fs in focus_sessions:
-            title = fs.title or 'Untitled'
+            title = fs.title or "Untitled"
             duration_min = (fs.actual_duration or 0) // 60
-            parts.append(f'- {title}: {duration_min}min ({fs.status})')
+            parts.append(f"- {title}: {duration_min}min ({fs.status})")
 
-    return '\n'.join(parts)
+    return "\n".join(parts)

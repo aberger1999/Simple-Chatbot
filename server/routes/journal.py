@@ -1,54 +1,94 @@
 from datetime import datetime
-from flask import Blueprint, request, jsonify
-from server.models.base import db
-from server.models.journal_entry import JournalEntry
+from typing import Optional
 
-journal_bp = Blueprint('journal', __name__)
+from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from server.database import get_db
+from server.auth import get_current_user
+from server.models.journal import JournalEntry
+
+router = APIRouter(prefix="")
 
 
-@journal_bp.route('/api/journal/recent', methods=['GET'])
-def get_recent_entries():
-    limit = request.args.get('limit', 7, type=int)
-    entries = JournalEntry.query.order_by(JournalEntry.date.desc()).limit(limit).all()
-    return jsonify([e.to_dict() for e in entries])
+class JournalUpdate(BaseModel):
+    morningIntentions: Optional[str] = None
+    content: Optional[str] = None
+    eveningReflection: Optional[str] = None
 
 
-@journal_bp.route('/api/journal/<date_str>', methods=['GET'])
-def get_entry(date_str):
+@router.get("/journal/recent")
+async def get_recent_entries(
+    limit: int = 7,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(JournalEntry)
+        .where(JournalEntry.user_id == user.id)
+        .order_by(JournalEntry.date.desc())
+        .limit(limit)
+    )
+    return [e.to_dict() for e in result.scalars().all()]
+
+
+@router.get("/journal/{date_str}")
+async def get_entry(
+    date_str: str,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
     try:
-        date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        d = datetime.strptime(date_str, "%Y-%m-%d").date()
     except ValueError:
-        return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
 
-    entry = JournalEntry.query.filter_by(date=date).first()
+    result = await db.execute(
+        select(JournalEntry).where(
+            JournalEntry.user_id == user.id, JournalEntry.date == d
+        )
+    )
+    entry = result.scalar_one_or_none()
     if not entry:
-        entry = JournalEntry(date=date)
-        db.session.add(entry)
-        db.session.commit()
+        entry = JournalEntry(user_id=user.id, date=d)
+        db.add(entry)
+        await db.flush()
+        await db.refresh(entry)
 
-    return jsonify(entry.to_dict())
+    return entry.to_dict()
 
 
-@journal_bp.route('/api/journal/<date_str>', methods=['PUT'])
-def update_entry(date_str):
+@router.put("/journal/{date_str}")
+async def update_entry(
+    date_str: str,
+    body: JournalUpdate,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
     try:
-        date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        d = datetime.strptime(date_str, "%Y-%m-%d").date()
     except ValueError:
-        return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
 
-    entry = JournalEntry.query.filter_by(date=date).first()
+    result = await db.execute(
+        select(JournalEntry).where(
+            JournalEntry.user_id == user.id, JournalEntry.date == d
+        )
+    )
+    entry = result.scalar_one_or_none()
     if not entry:
-        entry = JournalEntry(date=date)
-        db.session.add(entry)
+        entry = JournalEntry(user_id=user.id, date=d)
+        db.add(entry)
 
-    data = request.get_json()
+    if body.morningIntentions is not None:
+        entry.morning_intentions = body.morningIntentions
+    if body.content is not None:
+        entry.content = body.content
+    if body.eveningReflection is not None:
+        entry.evening_reflection = body.eveningReflection
 
-    if 'morningIntentions' in data:
-        entry.morning_intentions = data['morningIntentions']
-    if 'content' in data:
-        entry.content = data['content']
-    if 'eveningReflection' in data:
-        entry.evening_reflection = data['eveningReflection']
-
-    db.session.commit()
-    return jsonify(entry.to_dict())
+    await db.flush()
+    await db.refresh(entry)
+    return entry.to_dict()

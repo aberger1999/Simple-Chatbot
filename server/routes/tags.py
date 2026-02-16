@@ -1,94 +1,159 @@
-from flask import Blueprint, request, jsonify
-from server.models.base import db
-from server.models.custom_tag import CustomTag
-from server.models.note import Note
-from server.models.thought_post import ThoughtPost
+from typing import Optional
 
-tags_bp = Blueprint('tags', __name__)
+from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from server.database import get_db
+from server.auth import get_current_user
+from server.models.tag import CustomTag
+from server.models.note import Note
+from server.models.thought import ThoughtPost
+
+router = APIRouter(prefix="")
 
 PRESET_TAGS = [
-    'work', 'personal', 'ideas', 'finance', 'health', 'travel',
-    'recipes', 'projects', 'learning', 'shopping', 'journal',
-    'meeting', 'important', 'reference',
+    "work", "personal", "ideas", "finance", "health", "travel",
+    "recipes", "projects", "learning", "shopping", "journal",
+    "meeting", "important", "reference",
 ]
 
 
-@tags_bp.route('/api/tags', methods=['GET'])
-def get_tags():
-    custom_tags = CustomTag.query.order_by(CustomTag.name).all()
-    return jsonify({
-        'presetTags': PRESET_TAGS,
-        'customTags': [t.to_dict() for t in custom_tags],
-    })
+class TagCreate(BaseModel):
+    name: str
 
 
-@tags_bp.route('/api/tags', methods=['POST'])
-def create_tag():
-    data = request.get_json()
-    name = data.get('name', '').strip().lower()
+class TagUpdate(BaseModel):
+    name: str
+
+
+@router.get("/tags")
+async def get_tags(
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(CustomTag)
+        .where(CustomTag.user_id == user.id)
+        .order_by(CustomTag.name)
+    )
+    return {
+        "presetTags": PRESET_TAGS,
+        "customTags": [t.to_dict() for t in result.scalars().all()],
+    }
+
+
+@router.post("/tags")
+async def create_tag(
+    body: TagCreate,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    name = body.name.strip().lower()
 
     if not name:
-        return jsonify({'error': 'Tag name is required'}), 400
-    if ',' in name:
-        return jsonify({'error': 'Tag name cannot contain commas'}), 400
+        raise HTTPException(status_code=400, detail="Tag name is required")
+    if "," in name:
+        raise HTTPException(status_code=400, detail="Tag name cannot contain commas")
     if name in PRESET_TAGS:
-        return jsonify({'error': 'This is already a preset tag'}), 400
-    if CustomTag.query.filter_by(name=name).first():
-        return jsonify({'error': 'This custom tag already exists'}), 400
+        raise HTTPException(status_code=400, detail="This is already a preset tag")
 
-    tag = CustomTag(name=name)
-    db.session.add(tag)
-    db.session.commit()
-    return jsonify(tag.to_dict()), 201
+    result = await db.execute(
+        select(CustomTag).where(CustomTag.user_id == user.id, CustomTag.name == name)
+    )
+    if result.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="This custom tag already exists")
+
+    tag = CustomTag(user_id=user.id, name=name)
+    db.add(tag)
+    await db.flush()
+    await db.refresh(tag)
+    return JSONResponse(content=tag.to_dict(), status_code=201)
 
 
-def _propagate_tag_rename(old_name, new_name):
-    """Rename a tag across all notes and blog posts."""
-    for model in (Note, ThoughtPost):
-        items = model.query.filter(model.tags.ilike(f'%{old_name}%')).all()
-        for item in items:
-            tags = [t.strip() for t in item.tags.split(',') if t.strip()]
+async def _propagate_tag_rename(db, user_id, old_name, new_name):
+    for Model in (Note, ThoughtPost):
+        result = await db.execute(
+            select(Model).where(
+                Model.user_id == user_id,
+                Model.tags.ilike(f"%{old_name}%"),
+            )
+        )
+        for item in result.scalars().all():
+            tags = [t.strip() for t in item.tags.split(",") if t.strip()]
             tags = [new_name if t == old_name else t for t in tags]
-            item.tags = ','.join(tags)
+            item.tags = ",".join(tags)
 
 
-def _remove_tag_from_items(tag_name):
-    """Remove a tag from all notes and blog posts."""
-    for model in (Note, ThoughtPost):
-        items = model.query.filter(model.tags.ilike(f'%{tag_name}%')).all()
-        for item in items:
-            tags = [t.strip() for t in item.tags.split(',') if t.strip()]
+async def _remove_tag_from_items(db, user_id, tag_name):
+    for Model in (Note, ThoughtPost):
+        result = await db.execute(
+            select(Model).where(
+                Model.user_id == user_id,
+                Model.tags.ilike(f"%{tag_name}%"),
+            )
+        )
+        for item in result.scalars().all():
+            tags = [t.strip() for t in item.tags.split(",") if t.strip()]
             tags = [t for t in tags if t != tag_name]
-            item.tags = ','.join(tags)
+            item.tags = ",".join(tags)
 
 
-@tags_bp.route('/api/tags/<int:id>', methods=['PUT'])
-def update_tag(id):
-    tag = CustomTag.query.get_or_404(id)
-    data = request.get_json()
-    new_name = data.get('name', '').strip().lower()
+@router.put("/tags/{id}")
+async def update_tag(
+    id: int,
+    body: TagUpdate,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(CustomTag).where(CustomTag.id == id, CustomTag.user_id == user.id)
+    )
+    tag = result.scalar_one_or_none()
+    if not tag:
+        raise HTTPException(status_code=404, detail="Tag not found")
+
+    new_name = body.name.strip().lower()
 
     if not new_name:
-        return jsonify({'error': 'Tag name is required'}), 400
-    if ',' in new_name:
-        return jsonify({'error': 'Tag name cannot contain commas'}), 400
+        raise HTTPException(status_code=400, detail="Tag name is required")
+    if "," in new_name:
+        raise HTTPException(status_code=400, detail="Tag name cannot contain commas")
     if new_name in PRESET_TAGS:
-        return jsonify({'error': 'Cannot rename to a preset tag name'}), 400
-    existing = CustomTag.query.filter_by(name=new_name).first()
-    if existing and existing.id != tag.id:
-        return jsonify({'error': 'A custom tag with this name already exists'}), 400
+        raise HTTPException(status_code=400, detail="Cannot rename to a preset tag name")
+
+    existing = await db.execute(
+        select(CustomTag).where(CustomTag.user_id == user.id, CustomTag.name == new_name)
+    )
+    existing_tag = existing.scalar_one_or_none()
+    if existing_tag and existing_tag.id != tag.id:
+        raise HTTPException(status_code=400, detail="A custom tag with this name already exists")
 
     old_name = tag.name
-    _propagate_tag_rename(old_name, new_name)
+    await _propagate_tag_rename(db, user.id, old_name, new_name)
     tag.name = new_name
-    db.session.commit()
-    return jsonify(tag.to_dict())
+
+    await db.flush()
+    await db.refresh(tag)
+    return tag.to_dict()
 
 
-@tags_bp.route('/api/tags/<int:id>', methods=['DELETE'])
-def delete_tag(id):
-    tag = CustomTag.query.get_or_404(id)
-    _remove_tag_from_items(tag.name)
-    db.session.delete(tag)
-    db.session.commit()
-    return jsonify({'message': 'Tag deleted'}), 200
+@router.delete("/tags/{id}")
+async def delete_tag(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(CustomTag).where(CustomTag.id == id, CustomTag.user_id == user.id)
+    )
+    tag = result.scalar_one_or_none()
+    if not tag:
+        raise HTTPException(status_code=404, detail="Tag not found")
+
+    await _remove_tag_from_items(db, user.id, tag.name)
+    await db.delete(tag)
+    await db.flush()
+    return {"message": "Tag deleted"}

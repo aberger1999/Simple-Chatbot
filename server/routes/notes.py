@@ -1,84 +1,147 @@
-from flask import Blueprint, request, jsonify
-from server.models.base import db
+from typing import Optional
+
+from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
+from sqlalchemy import select, or_
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from server.database import get_db
+from server.auth import get_current_user
 from server.models.note import Note
 
-notes_bp = Blueprint('notes', __name__)
+router = APIRouter(prefix="")
 
 
-@notes_bp.route('/api/notes', methods=['GET'])
-def get_notes():
-    query = Note.query
-    search = request.args.get('search')
-    tag = request.args.get('tag')
-    goal_id = request.args.get('goal_id')
+class NoteCreate(BaseModel):
+    title: str
+    content: Optional[str] = ""
+    tags: Optional[str] = ""
+    isPinned: Optional[bool] = False
+    color: Optional[str] = ""
+    goalId: Optional[int] = None
+
+
+class NoteUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    tags: Optional[str] = None
+    isPinned: Optional[bool] = None
+    color: Optional[str] = None
+    goalId: Optional[int] = None
+
+
+@router.get("/notes")
+async def get_notes(
+    search: Optional[str] = None,
+    tag: Optional[str] = None,
+    goal_id: Optional[int] = None,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    query = select(Note).where(Note.user_id == user.id)
 
     if search:
-        query = query.filter(
-            db.or_(
-                Note.title.ilike(f'%{search}%'),
-                Note.content.ilike(f'%{search}%'),
-                Note.tags.ilike(f'%{search}%'),
+        query = query.where(
+            or_(
+                Note.title.ilike(f"%{search}%"),
+                Note.content.ilike(f"%{search}%"),
+                Note.tags.ilike(f"%{search}%"),
             )
         )
     if tag:
-        query = query.filter(Note.tags.ilike(f'%{tag}%'))
+        query = query.where(Note.tags.ilike(f"%{tag}%"))
     if goal_id:
-        query = query.filter(Note.goal_id == int(goal_id))
+        query = query.where(Note.goal_id == goal_id)
 
-    notes = query.order_by(Note.is_pinned.desc(), Note.updated_at.desc()).all()
-    return jsonify([n.to_dict() for n in notes])
+    query = query.order_by(Note.is_pinned.desc(), Note.updated_at.desc())
+    result = await db.execute(query)
+    return [n.to_dict() for n in result.scalars().all()]
 
 
-@notes_bp.route('/api/notes', methods=['POST'])
-def create_note():
-    data = request.get_json()
-    raw_tags = data.get('tags', '')
-    normalized_tags = ','.join(t.strip().lower() for t in raw_tags.split(',') if t.strip())
+@router.post("/notes")
+async def create_note(
+    body: NoteCreate,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    raw_tags = body.tags or ""
+    normalized_tags = ",".join(t.strip().lower() for t in raw_tags.split(",") if t.strip())
     note = Note(
-        title=data['title'],
-        content=data.get('content', ''),
+        user_id=user.id,
+        title=body.title,
+        content=body.content,
         tags=normalized_tags,
-        is_pinned=data.get('isPinned', False),
-        color=data.get('color', ''),
-        goal_id=data.get('goalId'),
+        is_pinned=body.isPinned,
+        color=body.color,
+        goal_id=body.goalId,
     )
-    db.session.add(note)
-    db.session.commit()
-    return jsonify(note.to_dict()), 201
+    db.add(note)
+    await db.flush()
+    await db.refresh(note)
+    return JSONResponse(content=note.to_dict(), status_code=201)
 
 
-@notes_bp.route('/api/notes/<int:id>', methods=['GET'])
-def get_note(id):
-    note = Note.query.get_or_404(id)
-    return jsonify(note.to_dict())
+@router.get("/notes/{id}")
+async def get_note(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Note).where(Note.id == id, Note.user_id == user.id)
+    )
+    note = result.scalar_one_or_none()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    return note.to_dict()
 
 
-@notes_bp.route('/api/notes/<int:id>', methods=['PUT'])
-def update_note(id):
-    note = Note.query.get_or_404(id)
-    data = request.get_json()
+@router.put("/notes/{id}")
+async def update_note(
+    id: int,
+    body: NoteUpdate,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Note).where(Note.id == id, Note.user_id == user.id)
+    )
+    note = result.scalar_one_or_none()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
 
-    if 'title' in data:
-        note.title = data['title']
-    if 'content' in data:
-        note.content = data['content']
-    if 'tags' in data:
-        raw_tags = data['tags']
-        note.tags = ','.join(t.strip().lower() for t in raw_tags.split(',') if t.strip())
-    if 'isPinned' in data:
-        note.is_pinned = data['isPinned']
-    if 'color' in data:
-        note.color = data['color']
-    if 'goalId' in data:
-        note.goal_id = data['goalId']
+    if body.title is not None:
+        note.title = body.title
+    if body.content is not None:
+        note.content = body.content
+    if body.tags is not None:
+        note.tags = ",".join(t.strip().lower() for t in body.tags.split(",") if t.strip())
+    if body.isPinned is not None:
+        note.is_pinned = body.isPinned
+    if body.color is not None:
+        note.color = body.color
+    if body.goalId is not None:
+        note.goal_id = body.goalId
 
-    db.session.commit()
-    return jsonify(note.to_dict())
+    await db.flush()
+    await db.refresh(note)
+    return note.to_dict()
 
 
-@notes_bp.route('/api/notes/<int:id>', methods=['DELETE'])
-def delete_note(id):
-    note = Note.query.get_or_404(id)
-    db.session.delete(note)
-    db.session.commit()
-    return jsonify({'message': 'Note deleted'}), 200
+@router.delete("/notes/{id}")
+async def delete_note(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Note).where(Note.id == id, Note.user_id == user.id)
+    )
+    note = result.scalar_one_or_none()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    await db.delete(note)
+    await db.flush()
+    return {"message": "Note deleted"}

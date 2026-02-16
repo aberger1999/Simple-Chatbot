@@ -1,19 +1,23 @@
 import math
 from datetime import datetime
-from flask import Blueprint, request, jsonify
-from server.models.base import db
-from server.models.community import Community
-from server.models.thought_post import ThoughtPost
-from server.models.comment import Comment
-from server.models.vote import Vote
+from typing import Optional
 
-thoughts_bp = Blueprint('thoughts', __name__)
+from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
+from sqlalchemy import select, func, delete
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from server.database import get_db
+from server.auth import get_current_user
+from server.models.thought import Community, ThoughtPost, Comment, Vote
+
+router = APIRouter(prefix="")
 
 EPOCH = datetime(1970, 1, 1)
 
 
 def _hot_score(vote_score, created_at):
-    """Reddit-style hot ranking."""
     score = vote_score
     order = math.log10(max(abs(score), 1))
     sign = 1 if score > 0 else -1 if score < 0 else 0
@@ -21,194 +25,341 @@ def _hot_score(vote_score, created_at):
     return sign * order + seconds / 45000
 
 
-# ── Communities ──────────────────────────────────────────
+# -- Communities --
 
-@thoughts_bp.route('/api/thoughts/communities', methods=['GET'])
-def get_communities():
-    communities = Community.query.order_by(Community.name).all()
-    return jsonify([c.to_dict() for c in communities])
+@router.get("/thoughts/communities")
+async def get_communities(
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Community)
+        .where(Community.user_id == user.id)
+        .order_by(Community.name)
+    )
+    return [c.to_dict() for c in result.scalars().all()]
 
 
-@thoughts_bp.route('/api/thoughts/communities', methods=['POST'])
-def create_community():
-    data = request.get_json()
-    name = data.get('name', '').strip()
+@router.post("/thoughts/communities")
+async def create_community(
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    name = body.get("name", "").strip()
     if not name:
-        return jsonify({'error': 'Community name is required'}), 400
-    if Community.query.filter_by(name=name).first():
-        return jsonify({'error': 'Community already exists'}), 400
-    community = Community(name=name)
-    db.session.add(community)
-    db.session.commit()
-    return jsonify(community.to_dict()), 201
+        raise HTTPException(status_code=400, detail="Community name is required")
+
+    result = await db.execute(
+        select(Community).where(
+            Community.user_id == user.id, Community.name == name
+        )
+    )
+    if result.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Community already exists")
+
+    community = Community(user_id=user.id, name=name)
+    db.add(community)
+    await db.flush()
+    await db.refresh(community)
+    return JSONResponse(content=community.to_dict(), status_code=201)
 
 
-@thoughts_bp.route('/api/thoughts/communities/<int:id>', methods=['DELETE'])
-def delete_community(id):
-    community = Community.query.get_or_404(id)
-    db.session.delete(community)
-    db.session.commit()
-    return jsonify({'message': 'Community deleted'}), 200
+@router.delete("/thoughts/communities/{id}")
+async def delete_community(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Community).where(
+            Community.id == id, Community.user_id == user.id
+        )
+    )
+    community = result.scalar_one_or_none()
+    if not community:
+        raise HTTPException(status_code=404, detail="Community not found")
+
+    await db.delete(community)
+    await db.flush()
+    return {"message": "Community deleted"}
 
 
-# ── Posts ────────────────────────────────────────────────
+# -- Posts --
 
-@thoughts_bp.route('/api/thoughts/posts', methods=['GET'])
-def get_posts():
-    community = request.args.get('community')
-    sort = request.args.get('sort', 'new')
-
-    query = ThoughtPost.query
+@router.get("/thoughts/posts")
+async def get_posts(
+    community: Optional[str] = None,
+    sort: Optional[str] = "new",
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    query = select(ThoughtPost).where(ThoughtPost.user_id == user.id)
     if community:
-        query = query.filter_by(community_id=community)
+        query = query.where(ThoughtPost.community_id == int(community))
 
-    posts = query.all()
+    result = await db.execute(query)
+    posts = list(result.scalars().all())
 
-    if sort == 'top':
-        posts.sort(key=lambda p: (p.vote_score(), p.created_at), reverse=True)
-    elif sort == 'hot':
-        posts.sort(key=lambda p: _hot_score(p.vote_score(), p.created_at), reverse=True)
-    else:  # new
+    if sort == "top":
+        posts.sort(key=lambda p: (p.vote_score, p.created_at), reverse=True)
+    elif sort == "hot":
+        posts.sort(key=lambda p: _hot_score(p.vote_score, p.created_at), reverse=True)
+    else:
         posts.sort(key=lambda p: p.created_at, reverse=True)
 
-    return jsonify([p.to_dict() for p in posts])
+    return [p.to_dict() for p in posts]
 
 
-@thoughts_bp.route('/api/thoughts/posts', methods=['POST'])
-def create_post():
-    data = request.get_json()
-    raw_tags = data.get('tags', '')
-    normalized_tags = ','.join(t.strip().lower() for t in raw_tags.split(',') if t.strip())
+@router.post("/thoughts/posts")
+async def create_post(
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    raw_tags = body.get("tags", "")
+    normalized_tags = ",".join(t.strip().lower() for t in raw_tags.split(",") if t.strip())
     post = ThoughtPost(
-        title=data['title'],
-        body=data.get('body', ''),
+        user_id=user.id,
+        title=body["title"],
+        body=body.get("body", ""),
         tags=normalized_tags,
-        community_id=data['communityId'],
-        goal_id=data.get('goalId'),
+        community_id=body["communityId"],
+        goal_id=body.get("goalId"),
     )
-    db.session.add(post)
-    db.session.commit()
-    return jsonify(post.to_dict()), 201
+    db.add(post)
+    await db.flush()
+    await db.refresh(post)
+    return JSONResponse(content=post.to_dict(), status_code=201)
 
 
-@thoughts_bp.route('/api/thoughts/posts/<int:id>', methods=['GET'])
-def get_post(id):
-    post = ThoughtPost.query.get_or_404(id)
-    result = post.to_dict()
+@router.get("/thoughts/posts/{id}")
+async def get_post(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(ThoughtPost).where(
+            ThoughtPost.id == id, ThoughtPost.user_id == user.id
+        )
+    )
+    post = result.scalar_one_or_none()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    data = post.to_dict()
 
     # Flat comments list
-    comments = Comment.query.filter_by(post_id=id).order_by(Comment.created_at).all()
-    result['comments'] = [c.to_dict() for c in comments]
+    comments_result = await db.execute(
+        select(Comment)
+        .where(Comment.post_id == id, Comment.user_id == user.id)
+        .order_by(Comment.created_at)
+    )
+    comments = comments_result.scalars().all()
+    data["comments"] = [c.to_dict() for c in comments]
 
-    # User's votes on this post and its comments
-    post_vote = Vote.query.filter_by(target_type='post', target_id=id).first()
-    result['userVote'] = post_vote.value if post_vote else 0
+    # User's vote on this post
+    post_vote_result = await db.execute(
+        select(Vote).where(
+            Vote.user_id == user.id,
+            Vote.target_type == "post",
+            Vote.target_id == id,
+        )
+    )
+    post_vote = post_vote_result.scalar_one_or_none()
+    data["userVote"] = post_vote.value if post_vote else 0
 
+    # User's votes on comments
     comment_ids = [c.id for c in comments]
     comment_votes = {}
     if comment_ids:
-        votes = Vote.query.filter(
-            Vote.target_type == 'comment', Vote.target_id.in_(comment_ids)
-        ).all()
-        for v in votes:
+        votes_result = await db.execute(
+            select(Vote).where(
+                Vote.user_id == user.id,
+                Vote.target_type == "comment",
+                Vote.target_id.in_(comment_ids),
+            )
+        )
+        for v in votes_result.scalars().all():
             comment_votes[v.target_id] = v.value
-    result['commentVotes'] = comment_votes
+    data["commentVotes"] = comment_votes
 
-    return jsonify(result)
-
-
-@thoughts_bp.route('/api/thoughts/posts/<int:id>', methods=['PUT'])
-def update_post(id):
-    post = ThoughtPost.query.get_or_404(id)
-    data = request.get_json()
-
-    if 'title' in data:
-        post.title = data['title']
-    if 'body' in data:
-        post.body = data['body']
-    if 'tags' in data:
-        raw_tags = data['tags']
-        post.tags = ','.join(t.strip().lower() for t in raw_tags.split(',') if t.strip())
-    if 'communityId' in data:
-        post.community_id = data['communityId']
-    if 'goalId' in data:
-        post.goal_id = data['goalId']
-
-    db.session.commit()
-    return jsonify(post.to_dict())
+    return data
 
 
-@thoughts_bp.route('/api/thoughts/posts/<int:id>', methods=['DELETE'])
-def delete_post(id):
-    post = ThoughtPost.query.get_or_404(id)
+@router.put("/thoughts/posts/{id}")
+async def update_post(
+    id: int,
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(ThoughtPost).where(
+            ThoughtPost.id == id, ThoughtPost.user_id == user.id
+        )
+    )
+    post = result.scalar_one_or_none()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    if "title" in body:
+        post.title = body["title"]
+    if "body" in body:
+        post.body = body["body"]
+    if "tags" in body:
+        raw_tags = body["tags"]
+        post.tags = ",".join(t.strip().lower() for t in raw_tags.split(",") if t.strip())
+    if "communityId" in body:
+        post.community_id = body["communityId"]
+    if "goalId" in body:
+        post.goal_id = body["goalId"]
+
+    await db.flush()
+    await db.refresh(post)
+    return post.to_dict()
+
+
+@router.delete("/thoughts/posts/{id}")
+async def delete_post(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(ThoughtPost).where(
+            ThoughtPost.id == id, ThoughtPost.user_id == user.id
+        )
+    )
+    post = result.scalar_one_or_none()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
     # Delete associated votes
-    Vote.query.filter_by(target_type='post', target_id=id).delete()
+    await db.execute(
+        delete(Vote).where(Vote.target_type == "post", Vote.target_id == id)
+    )
     # Delete comment votes
     comment_ids = [c.id for c in post.comments]
     if comment_ids:
-        Vote.query.filter(Vote.target_type == 'comment', Vote.target_id.in_(comment_ids)).delete(synchronize_session=False)
-    db.session.delete(post)
-    db.session.commit()
-    return jsonify({'message': 'Post deleted'}), 200
+        await db.execute(
+            delete(Vote).where(
+                Vote.target_type == "comment",
+                Vote.target_id.in_(comment_ids),
+            )
+        )
+
+    await db.delete(post)
+    await db.flush()
+    return {"message": "Post deleted"}
 
 
-# ── Comments ─────────────────────────────────────────────
+# -- Comments --
 
-@thoughts_bp.route('/api/thoughts/posts/<int:post_id>/comments', methods=['POST'])
-def create_comment(post_id):
-    ThoughtPost.query.get_or_404(post_id)
-    data = request.get_json()
-    comment = Comment(
-        post_id=post_id,
-        parent_id=data.get('parentId'),
-        body=data['body'],
+@router.post("/thoughts/posts/{post_id}/comments")
+async def create_comment(
+    post_id: int,
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(ThoughtPost).where(
+            ThoughtPost.id == post_id, ThoughtPost.user_id == user.id
+        )
     )
-    db.session.add(comment)
-    db.session.commit()
-    return jsonify(comment.to_dict()), 201
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    comment = Comment(
+        user_id=user.id,
+        post_id=post_id,
+        parent_id=body.get("parentId"),
+        body=body["body"],
+    )
+    db.add(comment)
+    await db.flush()
+    await db.refresh(comment)
+    return JSONResponse(content=comment.to_dict(), status_code=201)
 
 
-@thoughts_bp.route('/api/thoughts/comments/<int:id>', methods=['DELETE'])
-def delete_comment(id):
-    comment = Comment.query.get_or_404(id)
-    Vote.query.filter_by(target_type='comment', target_id=id).delete()
-    db.session.delete(comment)
-    db.session.commit()
-    return jsonify({'message': 'Comment deleted'}), 200
+@router.delete("/thoughts/comments/{id}")
+async def delete_comment(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Comment).where(Comment.id == id, Comment.user_id == user.id)
+    )
+    comment = result.scalar_one_or_none()
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+
+    await db.execute(
+        delete(Vote).where(Vote.target_type == "comment", Vote.target_id == id)
+    )
+    await db.delete(comment)
+    await db.flush()
+    return {"message": "Comment deleted"}
 
 
-# ── Voting ───────────────────────────────────────────────
+# -- Voting --
 
-@thoughts_bp.route('/api/thoughts/vote', methods=['POST'])
-def cast_vote():
-    data = request.get_json()
-    target_type = data['targetType']  # 'post' or 'comment'
-    target_id = data['targetId']
-    value = data['value']  # +1 or -1
+@router.post("/thoughts/vote")
+async def cast_vote(
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    target_type = body["targetType"]
+    target_id = body["targetId"]
+    value = body["value"]
 
-    existing = Vote.query.filter_by(target_type=target_type, target_id=target_id).first()
+    result = await db.execute(
+        select(Vote).where(
+            Vote.user_id == user.id,
+            Vote.target_type == target_type,
+            Vote.target_id == target_id,
+        )
+    )
+    existing = result.scalar_one_or_none()
 
     if existing:
         if existing.value == value:
-            # Same direction — remove vote
-            db.session.delete(existing)
+            await db.delete(existing)
         else:
-            # Opposite direction — switch
             existing.value = value
     else:
-        vote = Vote(target_type=target_type, target_id=target_id, value=value)
-        db.session.add(vote)
+        vote = Vote(
+            user_id=user.id,
+            target_type=target_type,
+            target_id=target_id,
+            value=value,
+        )
+        db.add(vote)
 
-    db.session.commit()
+    await db.flush()
 
     # Return updated score
-    score = db.session.query(db.func.coalesce(db.func.sum(Vote.value), 0)).filter(
-        Vote.target_type == target_type, Vote.target_id == target_id
-    ).scalar()
+    score_result = await db.execute(
+        select(func.coalesce(func.sum(Vote.value), 0)).where(
+            Vote.target_type == target_type, Vote.target_id == target_id
+        )
+    )
+    score = score_result.scalar()
 
-    current_vote = Vote.query.filter_by(target_type=target_type, target_id=target_id).first()
+    current_vote_result = await db.execute(
+        select(Vote).where(
+            Vote.user_id == user.id,
+            Vote.target_type == target_type,
+            Vote.target_id == target_id,
+        )
+    )
+    current_vote = current_vote_result.scalar_one_or_none()
 
-    return jsonify({
-        'score': score,
-        'userVote': current_vote.value if current_vote else 0,
-    })
+    return {
+        "score": score,
+        "userVote": current_vote.value if current_vote else 0,
+    }

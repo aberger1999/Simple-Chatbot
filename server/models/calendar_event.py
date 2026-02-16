@@ -1,37 +1,48 @@
-from datetime import datetime
-from .base import db
+from datetime import datetime, timezone
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
+from server.models.base import Base
 
 
-class CalendarEvent(db.Model):
-    __tablename__ = 'calendar_events'
+class CalendarEvent(Base):
+    __tablename__ = "calendar_events"
 
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text, default='')
-    start = db.Column(db.DateTime, nullable=False)
-    end = db.Column(db.DateTime, nullable=False)
-    all_day = db.Column(db.Boolean, default=False)
-    color = db.Column(db.String(20), default='#3b82f6')
-    category = db.Column(db.String(50), default='')
-    recurrence = db.Column(db.Text, default='')
-    goal_id = db.Column(db.Integer, db.ForeignKey('goals.id'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    goal = db.relationship('Goal', back_populates='events')
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id"), nullable=False, index=True
+    )
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="")
+    start: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    end: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    all_day: Mapped[bool] = mapped_column(Boolean, default=False)
+    color: Mapped[str] = mapped_column(String(20), default="#3b82f6")
+    category: Mapped[str] = mapped_column(String(50), default="")
+    recurrence: Mapped[str] = mapped_column(Text, default="")
+    goal_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("goals.id"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
 
     def to_dict(self):
         return {
-            'id': self.id,
-            'title': self.title,
-            'description': self.description,
-            'start': self.start.isoformat(),
-            'end': self.end.isoformat(),
-            'allDay': self.all_day,
-            'color': self.color,
-            'category': self.category,
-            'recurrence': self.recurrence,
-            'goalId': self.goal_id,
-            'createdAt': self.created_at.isoformat(),
-            'updatedAt': self.updated_at.isoformat(),
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "start": self.start.isoformat() if self.start else None,
+            "end": self.end.isoformat() if self.end else None,
+            "allDay": self.all_day,
+            "color": self.color,
+            "category": self.category,
+            "recurrence": self.recurrence,
+            "goalId": self.goal_id,
+            "createdAt": self.created_at.isoformat() if self.created_at else None,
+            "updatedAt": self.updated_at.isoformat() if self.updated_at else None,
         }

@@ -1,9 +1,23 @@
-import os
+from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
 
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+load_dotenv()
 
-class Config:
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'instance', 'app.db')
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    OLLAMA_BASE_URL = os.environ.get('OLLAMA_BASE_URL', 'http://localhost:11434')
-    OLLAMA_MODEL = os.environ.get('OLLAMA_MODEL', 'llama3.2')
+
+class Settings(BaseSettings):
+    DATABASE_URL: str = "postgresql://localhost/productivity_hub"
+    JWT_SECRET_KEY: str = "change-me"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_EXPIRATION_HOURS: int = 72
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_MODEL: str = "llama3.2"
+
+    @property
+    def async_database_url(self) -> str:
+        return self.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+    class Config:
+        env_file = ".env"
+
+
+settings = Settings()
