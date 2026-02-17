@@ -5,6 +5,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import Dashboard from './pages/Dashboard';
 import CalendarPage from './pages/CalendarPage';
 import NotesPage from './pages/NotesPage';
@@ -16,6 +18,7 @@ import HabitsPage from './pages/HabitsPage';
 import FocusTimerPage from './pages/FocusTimerPage';
 import CanvasPage from './pages/CanvasPage';
 import TodoPage from './pages/TodoPage';
+import SettingsPage from './pages/SettingsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +38,8 @@ export default function App() {
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
             {/* Protected routes */}
             <Route
@@ -56,6 +61,7 @@ export default function App() {
               <Route path="/thoughts" element={<ThoughtBoardPage />} />
               <Route path="/canvas" element={<CanvasPage />} />
               <Route path="/todos" element={<TodoPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

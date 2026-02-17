@@ -1,10 +1,43 @@
 const BASE = '/api';
+const TOKEN_KEY = 'productivity_hub_token';
+const SESSION_KEY = 'productivity_hub_session';
+
+/**
+ * Returns auth headers with Bearer token from localStorage.
+ * Use this for any fetch call outside the standard request() pipeline (e.g. streaming).
+ */
+export function getAuthHeaders() {
+  const token = localStorage.getItem(TOKEN_KEY);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function clearAuthAndRedirect() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(SESSION_KEY);
+  // Only redirect if not already on login/register page
+  if (!window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/register') && !window.location.pathname.startsWith('/forgot-password') && !window.location.pathname.startsWith('/reset-password')) {
+    window.location.href = '/login';
+  }
+}
 
 async function request(path, options = {}) {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...getAuthHeaders(),
+    ...options.headers,
+  };
+
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...options,
+    headers,
   });
+
+  // Auto-logout on 401 — token is missing, expired, or invalid
+  if (res.status === 401) {
+    clearAuthAndRedirect();
+    throw new Error('Session expired. Please log in again.');
+  }
+
   if (!res.ok) {
     const text = await res.text();
     throw new Error(text || res.statusText);
@@ -148,6 +181,30 @@ export const todosApi = {
 // Activity Feed
 export const activityApi = {
   getFeed: () => request('/activity-feed'),
+};
+
+// Users / Profile
+export const usersApi = {
+  getProfile: () => request('/users/profile'),
+  updateProfile: (data) =>
+    request('/users/profile', { method: 'PUT', body: JSON.stringify(data) }),
+  changePassword: (data) =>
+    request('/users/change-password', { method: 'POST', body: JSON.stringify(data) }),
+};
+
+// Notifications
+export const notificationsApi = {
+  getPreferences: () => request('/notifications/preferences'),
+  updatePreferences: (data) =>
+    request('/notifications/preferences', { method: 'PUT', body: JSON.stringify(data) }),
+};
+
+// Auth (public — no Bearer token needed)
+export const authApi = {
+  forgotPassword: (email) =>
+    request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+  resetPassword: (token, password) =>
+    request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, password }) }),
 };
 
 // Chat

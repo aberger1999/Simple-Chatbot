@@ -30,14 +30,14 @@ export default function RegisterPage() {
     return e;
   }
 
-  function handleSubmit(ev) {
+  async function handleSubmit(ev) {
     ev.preventDefault();
     setServerError('');
     const v = validate();
     setErrors(v);
     if (Object.keys(v).length) return;
 
-    const result = register(name.trim(), email, password);
+    const result = await register(name.trim(), email, password);
     if (!result.ok) {
       setServerError(result.error);
       return;

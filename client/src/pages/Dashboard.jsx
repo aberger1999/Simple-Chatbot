@@ -6,6 +6,7 @@ import {
   CheckCircle2, Pencil, BookOpen, Flame, MessageSquare, Activity, Timer,
 } from 'lucide-react';
 import { calendarApi, notesApi, goalsApi, activityApi, focusApi } from '../api/client';
+import NotificationInbox from '../components/NotificationInbox';
 
 function stripHtml(html) {
   if (!html) return '';
@@ -148,6 +149,7 @@ export default function Dashboard() {
           >
             <Plus size={16} /> Event
           </Link>
+          <NotificationInbox />
         </div>
       </div>
 

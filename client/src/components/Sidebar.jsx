@@ -13,6 +13,7 @@ import {
   Moon,
   Sun,
   LogOut,
+  Settings,
 } from 'lucide-react';
 import { useDarkMode } from '../hooks/useDarkMode';
 import { useAuth } from '../hooks/useAuth';
@@ -62,13 +63,22 @@ export default function Sidebar() {
         {user && (
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs text-indigo-200 truncate">{user.name || user.email}</span>
-            <button
-              onClick={logout}
-              className="text-indigo-400 hover:text-white transition-colors"
-              title="Sign out"
-            >
-              <LogOut size={14} />
-            </button>
+            <div className="flex items-center gap-2">
+              <NavLink
+                to="/settings"
+                className="text-indigo-400 hover:text-white transition-colors"
+                title="Settings"
+              >
+                <Settings size={14} />
+              </NavLink>
+              <button
+                onClick={logout}
+                className="text-indigo-400 hover:text-white transition-colors"
+                title="Sign out"
+              >
+                <LogOut size={14} />
+              </button>
+            </div>
           </div>
         )}
         <button

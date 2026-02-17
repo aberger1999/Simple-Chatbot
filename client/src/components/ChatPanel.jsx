@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, X, Send, Bot, User, Loader2, AlertCircle } from 'lucide-react';
+import { getAuthHeaders } from '../api/client';
 export default function ChatPanel({ toggleRef }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -57,7 +58,10 @@ export default function ChatPanel({ toggleRef }) {
     try {
       const res = await fetch('/api/chat/stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+        },
         body: JSON.stringify({ message: text, sessionId }),
         signal: controller.signal,
       });

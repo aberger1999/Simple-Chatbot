@@ -11,12 +11,14 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     email: Mapped[str] = mapped_column(String(300), unique=True, nullable=False, index=True)
     password_hash: Mapped[str] = mapped_column(String(300), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    timezone: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
         return {
             "id": self.id,
             "name": self.name,
             "email": self.email,
+            "timezone": self.timezone,
             "createdAt": self.created_at.isoformat() if self.created_at else None,
         }

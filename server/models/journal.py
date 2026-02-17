@@ -20,10 +20,10 @@ class JournalEntry(Base):
     content: Mapped[str] = mapped_column(Text, default="")
     evening_reflection: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime,
+        DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )

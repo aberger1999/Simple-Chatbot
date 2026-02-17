@@ -23,14 +23,14 @@ export default function LoginPage() {
     return e;
   }
 
-  function handleSubmit(ev) {
+  async function handleSubmit(ev) {
     ev.preventDefault();
     setServerError('');
     const v = validate();
     setErrors(v);
     if (Object.keys(v).length) return;
 
-    const result = login(email, password);
+    const result = await login(email, password);
     if (!result.ok) {
       setServerError(result.error);
       return;
@@ -94,7 +94,7 @@ export default function LoginPage() {
           </div>
 
           {/* Password */}
-          <div className="mb-6">
+          <div className="mb-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
               Password
             </label>
@@ -125,6 +125,16 @@ export default function LoginPage() {
             {errors.password && (
               <p className="mt-1.5 text-xs text-red-500 dark:text-red-400">{errors.password}</p>
             )}
+          </div>
+
+          {/* Forgot password */}
+          <div className="flex justify-end mb-4">
+            <Link
+              to="/forgot-password"
+              className="text-sm text-primary dark:text-indigo-400 hover:underline"
+            >
+              Forgot password?
+            </Link>
           </div>
 
           {/* Submit */}

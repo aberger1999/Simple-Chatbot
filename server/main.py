@@ -23,6 +23,8 @@ from server.routes.todos import router as todos_router
 from server.routes.thoughts import router as thoughts_router
 from server.routes.activity import router as activity_router
 from server.routes.tags import router as tags_router
+from server.routes.notifications import router as notifications_router
+from server.routes.users import router as users_router
 
 
 @asynccontextmanager
@@ -50,6 +52,8 @@ app.include_router(todos_router, prefix="/api", tags=["todos"])
 app.include_router(thoughts_router, prefix="/api", tags=["thoughts"])
 app.include_router(activity_router, prefix="/api", tags=["activity"])
 app.include_router(tags_router, prefix="/api", tags=["tags"])
+app.include_router(notifications_router, prefix="/api", tags=["notifications"])
+app.include_router(users_router, prefix="/api", tags=["users"])
 
 # --- SPA serving (production: Vite build output) ---
 DIST_DIR = os.path.join(os.path.dirname(__file__), "..", "client", "dist")

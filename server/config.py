@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     JWT_EXPIRATION_HOURS: int = 72
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama3.2"
+    NOVU_API_KEY: str = ""
+    FRONTEND_URL: str = "http://localhost:5173"
 
     @property
     def async_database_url(self) -> str:

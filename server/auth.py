@@ -1,30 +1,50 @@
 from datetime import datetime, timedelta, timezone
+import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from server.config import settings
 from server.database import get_db
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    return bcrypt.checkpw(plain.encode(), hashed.encode())
 
 
 def create_access_token(user_id: int) -> str:
     expire = datetime.now(timezone.utc) + timedelta(hours=settings.JWT_EXPIRATION_HOURS)
     payload = {"sub": str(user_id), "exp": expire}
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+
+def create_reset_token(user_id: int, password_hash: str) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(minutes=30)
+    payload = {
+        "sub": str(user_id),
+        "purpose": "reset",
+        "fingerprint": password_hash[:10],
+        "exp": expire,
+    }
+    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+
+def verify_reset_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+    except JWTError:
+        return None
+    if payload.get("purpose") != "reset":
+        return None
+    return {"user_id": int(payload["sub"]), "fingerprint": payload["fingerprint"]}
 
 
 async def get_current_user(
