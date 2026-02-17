@@ -549,3 +549,8 @@ body {
 .react-flow__attribution {
   display: none;
 }
+
+/* Smooth node animation during auto-layout */
+.canvas-flow.canvas-animating .react-flow__node {
+  transition: transform 300ms ease-out;
+}

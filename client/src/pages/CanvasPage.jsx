@@ -12,10 +12,12 @@ import {
   MarkerType,
   useReactFlow,
   ReactFlowProvider,
+  SelectionMode,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
   Save, ChevronDown, Plus, GitBranch, Lightbulb, Brain,
+  LayoutGrid, Download, FileImage, FileText, Grid3x3,
 } from 'lucide-react';
 import { canvasApi } from '../api/client';
 import { nodeTypes } from '../components/canvas/CanvasNodes';
@@ -23,6 +25,8 @@ import CanvasContextMenu from '../components/canvas/CanvasContextMenu';
 import CanvasSidePanel from '../components/canvas/CanvasSidePanel';
 import EdgeToolbar from '../components/canvas/EdgeToolbar';
 import EdgeContextMenu from '../components/canvas/EdgeContextMenu';
+import { layoutFlowchart, layoutMindMap, layoutGrid } from '../utils/canvasAutoLayout';
+import { exportAsPng, exportAsPdf } from '../utils/canvasExport';
 
 const MODES = [
   { id: 'flowchart', label: 'Flowchart', icon: GitBranch },
@@ -57,7 +61,10 @@ function CanvasInner() {
   const [edgeToolbarPos, setEdgeToolbarPos] = useState(null);
   const [edgeContextMenu, setEdgeContextMenu] = useState(null);
   const [saveStatus, setSaveStatus] = useState('');
+  const [snapEnabled, setSnapEnabled] = useState(false);
+  const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const boardDropdownRef = useRef(null);
+  const exportDropdownRef = useRef(null);
 
   const { data: boards = [] } = useQuery({
     queryKey: ['canvas-boards'],
@@ -92,11 +99,14 @@ function CanvasInner() {
     },
   });
 
-  // Close board dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e) => {
       if (boardDropdownRef.current && !boardDropdownRef.current.contains(e.target)) {
         setBoardDropdownOpen(false);
+      }
+      if (exportDropdownRef.current && !exportDropdownRef.current.contains(e.target)) {
+        setExportDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -114,6 +124,7 @@ function CanvasInner() {
     setActiveBoardId(board.id);
     setBoardName(board.name);
     setMode(board.mode);
+    setSnapEnabled(board.viewport?.snapToGrid ?? false);
 
     const loadedNodes = (board.nodes || []).map((n) => ({
       ...n,
@@ -144,7 +155,7 @@ function CanvasInner() {
 
   function handleSave() {
     if (!activeBoardId) return;
-    const viewport = reactFlow.getViewport();
+    const viewport = { ...reactFlow.getViewport(), snapToGrid: snapEnabled };
     const cleanNodes = nodes.map((n) => {
       const { onLabelChange, onDescriptionChange, onDataChange, ...cleanData } = n.data;
       return { ...n, data: cleanData };
@@ -416,6 +427,45 @@ function CanvasInner() {
     setEdges((eds) => [...eds, newEdge]);
   }
 
+  // -- Auto-layout handler --
+  function handleAutoLayout() {
+    if (!activeBoardId || nodes.length === 0) return;
+
+    let layoutFn;
+    if (mode === 'flowchart') layoutFn = layoutFlowchart;
+    else if (mode === 'mindMap') layoutFn = layoutMindMap;
+    else layoutFn = layoutGrid;
+
+    // Add animating class for CSS transition
+    const flowEl = document.querySelector('.canvas-flow');
+    flowEl?.classList.add('canvas-animating');
+
+    const layoutedNodes = mode === 'visionBoard'
+      ? layoutFn(nodes)
+      : layoutFn(nodes, edges);
+
+    setNodes(layoutedNodes.map((n) => ({
+      ...n,
+      data: { ...n.data, onLabelChange: handleLabelChange, onDescriptionChange: handleDescriptionChange, onDataChange: handleDataChange },
+    })));
+
+    setTimeout(() => reactFlow.fitView({ padding: 0.2 }), 50);
+    setTimeout(() => flowEl?.classList.remove('canvas-animating'), 400);
+  }
+
+  // -- Export handlers --
+  function handleExportPng() {
+    reactFlow.fitView({ padding: 0.2 });
+    setTimeout(() => exportAsPng(boardName), 200);
+    setExportDropdownOpen(false);
+  }
+
+  function handleExportPdf() {
+    reactFlow.fitView({ padding: 0.2 });
+    setTimeout(() => exportAsPdf(boardName), 200);
+    setExportDropdownOpen(false);
+  }
+
   // Apply stored edge visuals (arrowStyle → markers, label styling)
   const displayEdges = edges.map((e) => {
     const result = { ...e };
@@ -516,8 +566,65 @@ function CanvasInner() {
           </div>
         </div>
 
-        {/* Right group: save + delete */}
-        <div className="flex items-center gap-3">
+        {/* Right group: tools + save + delete */}
+        <div className="flex items-center gap-2">
+          {/* Auto-Layout */}
+          <button
+            onClick={handleAutoLayout}
+            disabled={!activeBoardId || nodes.length === 0}
+            title="Auto-layout nodes"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 disabled:opacity-40 transition-colors"
+          >
+            <LayoutGrid size={14} />
+          </button>
+
+          {/* Export dropdown */}
+          <div ref={exportDropdownRef} className="relative">
+            <button
+              onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
+              disabled={!activeBoardId || nodes.length === 0}
+              title="Export canvas"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 disabled:opacity-40 transition-colors"
+            >
+              <Download size={14} />
+              <span className="hidden sm:inline">Export</span>
+              <ChevronDown size={12} className={`transition-transform ${exportDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {exportDropdownOpen && (
+              <div className="absolute top-full right-0 mt-1 w-40 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-lg shadow-xl z-50 overflow-hidden">
+                <button
+                  onClick={handleExportPng}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700"
+                >
+                  <FileImage size={14} /> PNG Image
+                </button>
+                <button
+                  onClick={handleExportPdf}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700"
+                >
+                  <FileText size={14} /> PDF Document
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Snap toggle */}
+          <button
+            onClick={() => setSnapEnabled((v) => !v)}
+            disabled={!activeBoardId}
+            title={snapEnabled ? 'Disable grid snap' : 'Enable grid snap'}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium border transition-colors disabled:opacity-40 ${
+              snapEnabled
+                ? 'bg-primary/10 text-primary border-primary/30 dark:bg-primary/20 dark:text-primary dark:border-primary/30'
+                : 'border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Grid3x3 size={14} />
+          </button>
+
+          {/* Separator */}
+          <div className="w-px h-6 bg-gray-200 dark:bg-slate-700 mx-1" />
+
           {saveStatus && (
             <span className="text-xs text-green-500 font-medium">{saveStatus}</span>
           )}
@@ -560,6 +667,11 @@ function CanvasInner() {
               onPaneClick={() => { setContextMenu(null); clearEdgeSelection(); }}
               nodeTypes={nodeTypes}
               defaultEdgeOptions={defaultEdgeOptions}
+              selectionOnDrag
+              selectionMode={SelectionMode.Partial}
+              panOnDrag={[1, 2]}
+              snapToGrid={snapEnabled}
+              snapGrid={[20, 20]}
               fitView
               className="canvas-flow"
             >
