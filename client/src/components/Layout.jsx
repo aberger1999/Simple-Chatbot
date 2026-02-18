@@ -34,8 +34,8 @@ export default function Layout() {
         e.preventDefault();
         navigate('/focus');
       }
-      // Ctrl+N — new note
-      if (e.ctrlKey && e.key === 'n') {
+      // Ctrl+M — new note
+      if (e.ctrlKey && e.key === 'm') {
         e.preventDefault();
         navigate('/notes?new=1');
       }

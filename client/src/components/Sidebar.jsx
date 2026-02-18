@@ -95,7 +95,7 @@ export default function Sidebar() {
           {dark ? <Sun size={14} /> : <Moon size={14} />}
           {dark ? 'Light Mode' : 'Dark Mode'}
         </button>
-        <p className="text-xs text-gray-500 mt-2">Ctrl+K chat &middot; Ctrl+N note</p>
+        <p className="text-xs text-gray-500 mt-2">Ctrl+K chat &middot; Ctrl+M note</p>
       </div>
     </aside>
   );

@@ -484,6 +484,17 @@ function NotificationsSection({ showToast }) {
         onToggle={handleToggle}
       />
 
+      {/* Calendar Reminders */}
+      <NotifCard
+        icon={Clock}
+        color="text-rose-500 bg-rose-50 dark:bg-rose-500/10"
+        label="Calendar Reminders"
+        description="Event reminders and daily schedule summaries"
+        toggleKey="calendarRemindersEnabled"
+        form={form}
+        onToggle={handleToggle}
+      />
+
       {/* Delivery Settings */}
       <SectionCard className="mt-6">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Delivery Settings</h3>

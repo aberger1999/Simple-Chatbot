@@ -22,6 +22,7 @@ class CalendarEvent(Base):
     goal_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("goals.id"), nullable=True
     )
+    reminder_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -43,6 +44,7 @@ class CalendarEvent(Base):
             "category": self.category,
             "recurrence": self.recurrence,
             "goalId": self.goal_id,
+            "reminderMinutes": self.reminder_minutes,
             "createdAt": self.created_at.isoformat() if self.created_at else None,
             "updatedAt": self.updated_at.isoformat() if self.updated_at else None,
         }

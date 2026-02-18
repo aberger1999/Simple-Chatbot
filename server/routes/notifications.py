@@ -19,6 +19,7 @@ class PreferencesUpdate(BaseModel):
     journalRemindersEnabled: Optional[bool] = None
     focusNotificationsEnabled: Optional[bool] = None
     weeklyReviewEnabled: Optional[bool] = None
+    calendarRemindersEnabled: Optional[bool] = None
     reminderTime: Optional[str] = None
     phoneNumber: Optional[str] = None
 
@@ -67,6 +68,8 @@ async def update_preferences(
         prefs.focus_notifications_enabled = body.focusNotificationsEnabled
     if body.weeklyReviewEnabled is not None:
         prefs.weekly_review_enabled = body.weeklyReviewEnabled
+    if body.calendarRemindersEnabled is not None:
+        prefs.calendar_reminders_enabled = body.calendarRemindersEnabled
     if body.reminderTime is not None:
         parts = body.reminderTime.split(":")
         prefs.reminder_time = time(int(parts[0]), int(parts[1]))

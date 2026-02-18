@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Calendar as BigCalendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import enUS from 'date-fns/locale/en-US';
-import { X, Plus, Check, Palette, Repeat } from 'lucide-react';
+import { X, Plus, Check, Palette, Repeat, Bell } from 'lucide-react';
 import { calendarApi, goalsApi } from '../api/client';
 import { getHolidaysForRange } from '../utils/holidays';
 
@@ -53,6 +53,7 @@ function EventModal({ event, onClose, onSave, onDelete, goals, categories }) {
     color: event?.color || '#3b82f6',
     category: event?.category || '',
     goalId: event?.goalId || '',
+    reminderMinutes: event?.reminderMinutes ?? '',
     recurrenceType: existingRec.type,
     recurrenceDays: existingRec.days || [],
     recurrenceEndDate: existingRec.endDate || '',
@@ -113,6 +114,7 @@ function EventModal({ event, onClose, onSave, onDelete, goals, categories }) {
       ...rest,
       recurrence,
       goalId: rest.goalId || null,
+      reminderMinutes: rest.reminderMinutes ? Number(rest.reminderMinutes) : null,
     });
   };
 
@@ -277,6 +279,24 @@ function EventModal({ event, onClose, onSave, onDelete, goals, categories }) {
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Leave empty to repeat forever</p>
               </div>
             )}
+          </div>
+
+          {/* Reminder */}
+          <div>
+            <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+              <Bell size={12} /> Reminder
+            </span>
+            <select
+              value={form.reminderMinutes}
+              onChange={(e) => setForm({ ...form, reminderMinutes: e.target.value })}
+              className="w-full border dark:border-slate-600 rounded-lg px-3 py-2 text-sm dark:bg-slate-800 dark:text-white mt-1"
+            >
+              <option value="">No reminder</option>
+              <option value="15">15 minutes before</option>
+              <option value="30">30 minutes before</option>
+              <option value="60">1 hour before</option>
+              <option value="1440">1 day before</option>
+            </select>
           </div>
 
           {/* Category + Goal */}

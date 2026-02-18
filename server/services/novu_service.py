@@ -34,6 +34,16 @@ The following workflow identifiers must be created in the Novu dashboard
    - Trigger: trigger_weekly_review(subscriber_id)
    - Payload: {} (no extra data)
    - Suggested template: "Your weekly review is ready — take a look at your progress!"
+
+6. calendar-event-reminder
+   - Trigger: trigger_event_reminder(subscriber_id, event_title, event_time, minutes_before, user_name)
+   - Payload: { eventTitle: str, eventTime: str (ISO), minutesBefore: int, userName: str }
+   - Suggested template: "Reminder: {{eventTitle}} starts in {{minutesBefore}} minutes"
+
+7. calendar-daily-schedule
+   - Trigger: trigger_daily_schedule(subscriber_id, events_today, total_events, user_name)
+   - Payload: { eventsToday: [{title: str, time: str}], totalEvents: int, userName: str }
+   - Suggested template: "Good morning {{userName}}! You have {{totalEvents}} events today."
 """
 
 import logging
@@ -127,4 +137,42 @@ async def trigger_password_reset(
         "password-reset",
         subscriber_id,
         {"userName": user_name, "resetLink": reset_link},
+    )
+
+
+async def trigger_event_reminder(
+    subscriber_id: str,
+    event_title: str,
+    event_time: str,
+    minutes_before: int,
+    user_name: str = "",
+) -> dict | None:
+    """Trigger a calendar event reminder notification."""
+    return await _trigger(
+        "calendar-event-reminder",
+        subscriber_id,
+        {
+            "eventTitle": event_title,
+            "eventTime": event_time,
+            "minutesBefore": minutes_before,
+            "userName": user_name,
+        },
+    )
+
+
+async def trigger_daily_schedule(
+    subscriber_id: str,
+    events_today: list[dict],
+    total_events: int,
+    user_name: str = "",
+) -> dict | None:
+    """Trigger a daily schedule summary notification."""
+    return await _trigger(
+        "calendar-daily-schedule",
+        subscriber_id,
+        {
+            "eventsToday": events_today,
+            "totalEvents": total_events,
+            "userName": user_name,
+        },
     )

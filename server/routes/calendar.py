@@ -25,6 +25,7 @@ class EventCreate(BaseModel):
     category: Optional[str] = ""
     recurrence: Optional[str] = ""
     goalId: Optional[int] = None
+    reminderMinutes: Optional[int] = None
 
 
 class EventUpdate(BaseModel):
@@ -37,6 +38,7 @@ class EventUpdate(BaseModel):
     category: Optional[str] = None
     recurrence: Optional[str] = None
     goalId: Optional[int] = None
+    reminderMinutes: Optional[int] = None
 
 
 @router.get("/calendar")
@@ -108,6 +110,7 @@ async def create_event(
         category=body.category,
         recurrence=body.recurrence,
         goal_id=body.goalId,
+        reminder_minutes=body.reminderMinutes,
     )
     db.add(event)
     await db.flush()
@@ -184,6 +187,8 @@ async def update_event(
         event.recurrence = body.recurrence
     if body.goalId is not None:
         event.goal_id = body.goalId
+    if body.reminderMinutes is not None:
+        event.reminder_minutes = body.reminderMinutes if body.reminderMinutes > 0 else None
 
     await db.flush()
     await db.refresh(event)

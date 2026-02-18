@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 from server.database import engine
 from server.models.base import Base
 import server.models  # noqa: F401 — register all models
+from server.services.scheduler import start_scheduler, stop_scheduler
 
 from server.routes.auth import router as auth_router
 from server.routes.calendar import router as calendar_router
@@ -32,7 +33,9 @@ async def lifespan(app: FastAPI):
     # Create tables on startup (dev convenience; Alembic handles production)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    start_scheduler()
     yield
+    stop_scheduler()
 
 
 app = FastAPI(title="Quorex", lifespan=lifespan)
