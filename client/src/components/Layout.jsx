@@ -47,20 +47,22 @@ export default function Layout() {
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-surface-dark">
       <Sidebar />
-      <main className={`flex-1 ${isFullBleed ? 'overflow-hidden' : 'overflow-auto'}`}>
+      <main className={`flex-1 flex flex-col ${isFullBleed ? 'overflow-hidden' : 'overflow-auto'}`}>
         {isFullBleed ? (
-          <div className="page-enter" key={pathname}>
+          <div className="page-enter flex-1" key={pathname}>
             <Outlet />
           </div>
         ) : (
-          <div className="p-6 max-w-7xl mx-auto">
-            <div className="page-enter" key={pathname}>
-              <Outlet />
+          <>
+            <div className="flex-1 p-6 max-w-7xl mx-auto w-full">
+              <div className="page-enter" key={pathname}>
+                <Outlet />
+              </div>
             </div>
             <footer className="sticky-footer">
               &copy; 2026 Quorex. All rights reserved. Proprietary and confidential.
             </footer>
-          </div>
+          </>
         )}
       </main>
       <ChatPanel toggleRef={chatToggleRef} />
