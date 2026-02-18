@@ -35,8 +35,8 @@ export default function GoalModal({ goal, onClose, onSave, onDelete }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-md">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-modal z-50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-800/80 w-full max-w-md">
         <div className="flex items-center justify-between p-4 border-b dark:border-slate-700">
           <h2 className="font-semibold text-gray-900 dark:text-white">
             {goal?.id ? 'Edit Goal' : 'New Goal'}
@@ -155,7 +155,7 @@ export default function GoalModal({ goal, onClose, onSave, onDelete }) {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg"
+                className="px-4 py-2 text-sm btn-gradient text-white rounded-lg"
               >
                 Save
               </button>

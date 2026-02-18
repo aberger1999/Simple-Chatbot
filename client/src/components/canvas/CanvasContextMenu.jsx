@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Trash2, Copy, Palette, ExternalLink, Plus } from 'lucide-react';
 
-const COLORS = ['#6366f1', '#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#ec4899', '#8b5cf6', '#64748b'];
+const COLORS = ['#7c3aed', '#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#ec4899', '#8b5cf6', '#64748b'];
 
 export default function CanvasContextMenu({
   x,
@@ -38,7 +38,7 @@ export default function CanvasContextMenu({
   return (
     <div
       ref={ref}
-      className="fixed bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-lg shadow-xl py-1 z-[100] min-w-[180px]"
+      className="fixed bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-lg shadow-2xl py-1 z-[100] min-w-[180px]"
       style={{ left: x, top: y }}
     >
       {showAddChild && (

@@ -82,7 +82,7 @@ function NoteEditor({ note, onClose, goals }) {
           )}
           <button
             onClick={handleSave}
-            className="bg-primary hover:bg-primary-dark text-white text-sm px-4 py-2 rounded-lg"
+            className="btn-gradient text-white text-sm px-4 py-2 rounded-lg"
           >
             Save
           </button>
@@ -196,10 +196,10 @@ export default function NotesPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Notes</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Notes</h1>
         <button
           onClick={() => setEditing({})}
-          className="flex items-center gap-1 bg-primary hover:bg-primary-dark text-white text-sm px-3 py-2 rounded-lg"
+          className="flex items-center gap-1 btn-gradient text-white text-sm px-3 py-2 rounded-lg"
         >
           <Plus size={16} /> New Note
         </button>
@@ -259,7 +259,7 @@ export default function NotesPage() {
             <button
               key={note.id}
               onClick={() => setEditing(note)}
-              className={`text-left rounded-xl shadow-sm border dark:border-slate-800 p-4 hover:shadow-md transition-shadow ${
+              className={`text-left rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-4 hover:shadow-md transition-shadow ${
                 colorClasses || 'bg-white dark:bg-slate-900'
               }`}
             >

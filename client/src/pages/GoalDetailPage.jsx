@@ -329,7 +329,7 @@ export default function GoalDetailPage() {
 
       {/* Title + Status */}
       <div className="flex items-start justify-between mb-2">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{goal.title}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{goal.title}</h1>
         <span className={`text-xs px-2.5 py-1 rounded-full shrink-0 ml-3 ${
           goal.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
           goal.status === 'completed' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
@@ -348,7 +348,7 @@ export default function GoalDetailPage() {
         <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
           Progress
         </h2>
-        <div className="bg-white dark:bg-slate-900 rounded-xl border dark:border-slate-800 p-4 space-y-4">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border dark:border-slate-800/80 p-4 space-y-4">
           {/* Status + Target Date + Mode row */}
           <div className="grid grid-cols-3 gap-3">
             <label className="block">
@@ -457,7 +457,7 @@ export default function GoalDetailPage() {
           {milestoneInput.trim() && (
             <button
               onClick={() => { addMilestoneMut.mutate(milestoneInput.trim()); }}
-              className="text-xs bg-primary hover:bg-primary-dark text-white px-3 py-1 rounded-lg"
+              className="text-xs btn-gradient text-white px-3 py-1 rounded-lg"
             >
               Add
             </button>
@@ -470,7 +470,7 @@ export default function GoalDetailPage() {
         <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
           Linked Items
         </h2>
-        <div className="bg-white dark:bg-slate-900 rounded-xl border dark:border-slate-800 p-4 space-y-4">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border dark:border-slate-800/80 p-4 space-y-4">
           {/* Notes */}
           {goal.notes?.length > 0 && (
             <div>
@@ -551,7 +551,7 @@ export default function GoalDetailPage() {
         <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
           Info
         </h2>
-        <div className="bg-white dark:bg-slate-900 rounded-xl border dark:border-slate-800 p-4 text-sm text-gray-500 dark:text-gray-400 space-y-1">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border dark:border-slate-800/80 p-4 text-sm text-gray-500 dark:text-gray-400 space-y-1">
           {goal.targetDate && (
             <p className="flex items-center gap-2">
               <span>

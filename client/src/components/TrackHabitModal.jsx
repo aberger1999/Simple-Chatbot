@@ -129,9 +129,9 @@ export default function TrackHabitModal({ open, onClose, onSave, onDelete, editi
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-modal z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-md max-h-[85vh] overflow-y-auto"
+        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-800/80 w-full max-w-md max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -424,7 +424,7 @@ export default function TrackHabitModal({ open, onClose, onSave, onDelete, editi
               <button
                 onClick={handleSave}
                 disabled={!canSave()}
-                className="px-4 py-2 text-sm font-medium bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm btn-gradient rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Save
               </button>

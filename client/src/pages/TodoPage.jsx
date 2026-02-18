@@ -282,7 +282,7 @@ export default function TodoPage() {
           <>
             {/* Header */}
             <div className="px-8 py-5 bg-white dark:bg-slate-900 border-b dark:border-slate-800 shrink-0">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{activeList.name}</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{activeList.name}</h1>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 {pendingItems.length} task{pendingItems.length !== 1 ? 's' : ''} remaining
                 {completedItems.length > 0 && ` \u00b7 ${completedItems.length} completed`}
@@ -303,7 +303,7 @@ export default function TodoPage() {
                 {pendingItems.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-900 rounded-xl border dark:border-slate-800 shadow-sm group hover:shadow-md transition-shadow"
+                    className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-900 rounded-xl border dark:border-slate-800/80 shadow-sm card-elevated group hover:shadow-md transition-shadow"
                   >
                     <button
                       onClick={() => handleToggleComplete(item)}
@@ -413,7 +413,7 @@ export default function TodoPage() {
               {lists.length === 0 && (
                 <button
                   onClick={() => setAddingList(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white text-sm rounded-lg mx-auto"
+                  className="flex items-center gap-2 px-4 py-2 btn-gradient text-white text-sm rounded-lg mx-auto"
                 >
                   <Plus size={16} /> New List
                 </button>

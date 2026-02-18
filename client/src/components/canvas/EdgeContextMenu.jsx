@@ -21,7 +21,7 @@ export default function EdgeContextMenu({ x, y, edgeId, onClose, onDelete, onApp
   return (
     <div
       ref={ref}
-      className="fixed bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-lg shadow-xl py-1 z-[100] min-w-[180px]"
+      className="fixed bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-lg shadow-2xl py-1 z-[100] min-w-[180px]"
       style={{ left: x, top: y }}
     >
       <button

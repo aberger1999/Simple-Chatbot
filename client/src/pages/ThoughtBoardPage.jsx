@@ -187,7 +187,7 @@ function PostCard({ post, onClick }) {
   return (
     <div
       onClick={onClick}
-      className="flex gap-3 p-4 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl cursor-pointer hover:border-primary/30 dark:hover:border-primary/30 transition-colors"
+      className="card-elevated flex gap-3 p-4 bg-white dark:bg-slate-900 border dark:border-slate-800/80 rounded-xl cursor-pointer hover:border-primary/30 dark:hover:border-primary/30 transition-colors"
     >
       <VoteControls
         targetType="post"
@@ -267,10 +267,10 @@ function NewPostModal({ communities, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-modal" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-slate-900 rounded-xl shadow-xl border dark:border-slate-800 w-full max-w-lg mx-4 p-6"
+        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-800/80 w-full max-w-lg mx-4 p-6"
       >
         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">New Post</h2>
 
@@ -315,7 +315,7 @@ function NewPostModal({ communities, onClose }) {
           <button
             onClick={handleSubmit}
             disabled={!title.trim() || !communityId}
-            className="text-sm px-4 py-2 rounded-lg bg-primary hover:bg-primary-dark text-white disabled:opacity-40"
+            className="text-sm px-4 py-2 rounded-lg btn-gradient text-white disabled:opacity-40"
           >
             Post
           </button>
@@ -366,7 +366,7 @@ function ReplyBox({ postId, parentId, onDone }) {
       <button
         onClick={handleSubmit}
         disabled={!body.trim()}
-        className="self-end text-xs px-3 py-2 rounded-lg bg-primary hover:bg-primary-dark text-white disabled:opacity-40"
+        className="self-end text-xs px-3 py-2 rounded-lg btn-gradient text-white disabled:opacity-40"
       >
         Reply
       </button>
@@ -473,7 +473,7 @@ function PostDetail({ postId, onBack }) {
         <ArrowLeft size={16} /> Back to feed
       </button>
 
-      <div className="bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-xl p-5">
+      <div className="card-elevated bg-white dark:bg-slate-900 border dark:border-slate-800/80 rounded-xl p-5">
         <div className="flex gap-4">
           <VoteControls
             targetType="post"
@@ -581,7 +581,7 @@ function PostFeed({ selectedCommunity, communities }) {
         <button
           onClick={() => setShowNewPost(true)}
           disabled={communities.length === 0}
-          className="flex items-center gap-1 text-sm px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg disabled:opacity-40"
+          className="flex items-center gap-1 text-sm px-4 py-2 btn-gradient text-white rounded-lg disabled:opacity-40"
         >
           <Plus size={16} /> New Post
         </button>
@@ -635,7 +635,7 @@ export default function ThoughtBoardPage() {
       />
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Thought Board</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white mb-6">Thought Board</h1>
           <PostFeed selectedCommunity={selectedCommunity} communities={communities} />
         </div>
       </div>

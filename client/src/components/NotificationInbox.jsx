@@ -18,8 +18,8 @@ export default function NotificationInbox() {
       placement="bottom-end"
       appearance={{
         variables: {
-          colorPrimary: '#6366f1',
-          colorForeground: '#1e1b4b',
+          colorPrimary: '#7c3aed',
+          colorForeground: '#0f0e17',
         },
       }}
       renderBell={(unreadCount) => (

@@ -120,7 +120,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Dashboard</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
             {today.toLocaleDateString('en-US', {
               weekday: 'long',
@@ -133,19 +133,19 @@ export default function Dashboard() {
         <div className="flex gap-2">
           <Link
             to="/notes?new=1"
-            className="flex items-center gap-1 bg-primary hover:bg-primary-dark text-white text-sm px-3 py-2 rounded-lg"
+            className="flex items-center gap-1 btn-gradient text-white text-sm px-3 py-2 rounded-lg"
           >
             <Plus size={16} /> Note
           </Link>
           <Link
             to="/journal"
-            className="flex items-center gap-1 bg-primary hover:bg-primary-dark text-white text-sm px-3 py-2 rounded-lg"
+            className="flex items-center gap-1 btn-gradient text-white text-sm px-3 py-2 rounded-lg"
           >
             <BookMarked size={16} /> Journal
           </Link>
           <Link
             to="/calendar?new=1"
-            className="flex items-center gap-1 bg-primary hover:bg-primary-dark text-white text-sm px-3 py-2 rounded-lg"
+            className="flex items-center gap-1 btn-gradient text-white text-sm px-3 py-2 rounded-lg"
           >
             <Plus size={16} /> Event
           </Link>
@@ -156,7 +156,7 @@ export default function Dashboard() {
       {/* Top cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Today's Events */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-5">
           <div className="flex items-center gap-2 mb-4">
             <Calendar size={18} className="text-primary" />
             <h2 className="font-semibold text-gray-900 dark:text-white">Today&apos;s Events</h2>
@@ -187,7 +187,7 @@ export default function Dashboard() {
         </div>
 
         {/* Active Goals */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-5">
           <div className="flex items-center gap-2 mb-4">
             <Target size={18} className="text-primary" />
             <h2 className="font-semibold text-gray-900 dark:text-white">Active Goals</h2>
@@ -218,7 +218,7 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Notes */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-5">
           <div className="flex items-center gap-2 mb-4">
             <StickyNote size={18} className="text-primary" />
             <h2 className="font-semibold text-gray-900 dark:text-white">Recent Notes</h2>
@@ -248,7 +248,7 @@ export default function Dashboard() {
         </div>
 
         {/* Focus Timer Stats */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-5">
           <div className="flex items-center gap-2 mb-4">
             <Timer size={18} className="text-cyan-500" />
             <h2 className="font-semibold text-gray-900 dark:text-white">Focus Timer</h2>
@@ -270,7 +270,7 @@ export default function Dashboard() {
       </div>
 
       {/* Upcoming This Week */}
-      <div className="mt-6 bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
+      <div className="mt-6 bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-5">
         <div className="flex items-center gap-2 mb-4">
           <Clock size={18} className="text-primary" />
           <h2 className="font-semibold text-gray-900 dark:text-white">Upcoming This Week</h2>
@@ -301,7 +301,7 @@ export default function Dashboard() {
       </div>
 
       {/* Happened This Week */}
-      <div className="mt-6 bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
+      <div className="mt-6 bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-5">
         <div className="flex items-center gap-2 mb-4">
           <CheckCircle2 size={18} className="text-gray-400" />
           <h2 className="font-semibold text-gray-500 dark:text-gray-400">Happened This Week</h2>
@@ -332,7 +332,7 @@ export default function Dashboard() {
       </div>
 
       {/* Activity Feed */}
-      <div className="mt-6 bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
+      <div className="mt-6 bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-5">
         <div className="flex items-center gap-2 mb-4">
           <Activity size={18} className="text-primary" />
           <h2 className="font-semibold text-gray-900 dark:text-white">Activity Feed</h2>

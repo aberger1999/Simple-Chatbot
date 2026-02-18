@@ -202,9 +202,9 @@ export default function FocusSessionModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-modal z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-auto"
+        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-800/80 w-full max-w-lg max-h-[90vh] overflow-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-5 border-b dark:border-slate-800">
@@ -304,7 +304,7 @@ export default function FocusSessionModal({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-primary hover:bg-primary-dark text-white text-sm rounded-lg"
+              className="px-4 py-2 btn-gradient text-white text-sm rounded-lg"
             >
               {editingSession ? 'Update' : 'Save Session'}
             </button>

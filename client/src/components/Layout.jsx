@@ -45,14 +45,21 @@ export default function Layout() {
   }, [navigate]);
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-slate-950">
+    <div className="flex min-h-screen bg-gray-50 dark:bg-surface-dark">
       <Sidebar />
       <main className={`flex-1 ${isFullBleed ? 'overflow-hidden' : 'overflow-auto'}`}>
         {isFullBleed ? (
-          <Outlet />
+          <div className="page-enter" key={pathname}>
+            <Outlet />
+          </div>
         ) : (
           <div className="p-6 max-w-7xl mx-auto">
-            <Outlet />
+            <div className="page-enter" key={pathname}>
+              <Outlet />
+            </div>
+            <footer className="sticky-footer">
+              &copy; 2026 Quorex. All rights reserved. Proprietary and confidential.
+            </footer>
           </div>
         )}
       </main>

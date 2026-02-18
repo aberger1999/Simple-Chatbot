@@ -177,10 +177,10 @@ export default function HabitsPage() {
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Habits</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Habits</h1>
         <button
           onClick={openNew}
-          className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white text-sm font-medium rounded-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2 btn-gradient text-white text-sm font-medium rounded-lg transition-colors"
         >
           <Plus size={16} />
           Track Habit
@@ -228,7 +228,7 @@ export default function HabitsPage() {
       ) : (
         <>
           {/* Weekly Consistency Bar */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5 mb-6">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-5 mb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Weekly Consistency</h2>
               <span className="text-lg font-bold text-primary">{weekPercent}%</span>

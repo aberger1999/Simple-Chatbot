@@ -9,7 +9,7 @@ const ARROW_STYLES = [
 ];
 
 function ArrowIcon({ type, active }) {
-  const color = active ? '#6366f1' : 'currentColor';
+  const color = active ? '#7c3aed' : 'currentColor';
   if (type === 'none') {
     return (
       <svg width="22" height="10" viewBox="0 0 22 10">
@@ -86,7 +86,7 @@ export default function EdgeToolbar({ edge, position, onUpdate, onClose }) {
   return (
     <div
       ref={ref}
-      className="fixed z-[100] bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl shadow-xl p-3 flex flex-col gap-3"
+      className="fixed z-[100] bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl shadow-2xl p-3 flex flex-col gap-3"
       style={{ left: pos.x, top: pos.y, minWidth: 220 }}
       onMouseDown={(e) => e.stopPropagation()}
     >

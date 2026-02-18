@@ -52,10 +52,10 @@ export default function GoalsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Goals / Vision Board</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Goals / Vision Board</h1>
         <button
           onClick={() => setModal({})}
-          className="flex items-center gap-1 bg-primary hover:bg-primary-dark text-white text-sm px-3 py-2 rounded-lg"
+          className="flex items-center gap-1 btn-gradient text-white text-sm px-3 py-2 rounded-lg"
         >
           <Plus size={16} /> New Goal
         </button>
@@ -66,7 +66,7 @@ export default function GoalsPage() {
         {sorted.map((goal) => (
           <div
             key={goal.id}
-            className="break-inside-avoid bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 overflow-hidden"
+            className="break-inside-avoid bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 overflow-hidden"
           >
             <div className="h-2" style={{ backgroundColor: goal.color }} />
             <div className="p-4">

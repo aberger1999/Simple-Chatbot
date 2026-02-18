@@ -117,8 +117,8 @@ function EventModal({ event, onClose, onSave, onDelete, goals, categories }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-modal z-50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-800/80 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-900 z-10">
           <h2 className="font-semibold text-gray-900 dark:text-white">
             {event?.id ? 'Edit Event' : 'New Event'}
@@ -299,7 +299,7 @@ function EventModal({ event, onClose, onSave, onDelete, goals, categories }) {
                   <button
                     type="button"
                     onClick={handleNewCategorySave}
-                    className="px-2 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark"
+                    className="px-2 py-2 btn-gradient text-white rounded-lg"
                   >
                     <Plus size={14} />
                   </button>
@@ -365,7 +365,7 @@ function EventModal({ event, onClose, onSave, onDelete, goals, categories }) {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg"
+                className="px-4 py-2 text-sm btn-gradient text-white rounded-lg"
               >
                 Save
               </button>
@@ -568,8 +568,8 @@ export default function CalendarPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Calendar</h1>
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-4" style={{ height: 'calc(100vh - 140px)' }}>
+      <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white mb-6">Calendar</h1>
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-4" style={{ height: 'calc(100vh - 140px)' }}>
         <BigCalendar
           localizer={localizer}
           events={allEvents}

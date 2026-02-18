@@ -502,7 +502,7 @@ function CanvasInner() {
   return (
     <div className="flex flex-col h-screen">
       {/* Top Bar — matches Dashboard/Notes header style */}
-      <div className="flex items-center px-6 py-4 bg-white dark:bg-slate-900 border-b dark:border-slate-800 shrink-0">
+      <div className="flex items-center px-6 py-4 bg-white dark:bg-slate-900 border-b dark:border-slate-800/80 shrink-0">
         {/* Left group: board selector + name */}
         <div className="flex items-center gap-3 min-w-0">
           <div ref={boardDropdownRef} className="relative">
@@ -631,7 +631,7 @@ function CanvasInner() {
           <button
             onClick={handleSave}
             disabled={!activeBoardId}
-            className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary-dark disabled:opacity-40 text-white text-sm rounded-lg font-medium"
+            className="flex items-center gap-1.5 px-4 py-2 btn-gradient disabled:opacity-40 text-white text-sm rounded-lg font-medium"
           >
             <Save size={14} />
             Save
@@ -689,7 +689,7 @@ function CanvasInner() {
                 <p className="text-gray-400 dark:text-gray-500 mb-3">No board selected</p>
                 <button
                   onClick={handleNewBoard}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white text-sm rounded-lg mx-auto"
+                  className="flex items-center gap-2 px-4 py-2 btn-gradient text-white text-sm rounded-lg mx-auto"
                 >
                   <Plus size={16} /> Create Your First Board
                 </button>

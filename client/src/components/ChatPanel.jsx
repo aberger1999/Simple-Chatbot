@@ -175,7 +175,7 @@ export default function ChatPanel({ toggleRef }) {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-50 bg-primary hover:bg-primary-dark text-white p-3.5 rounded-full shadow-lg transition-transform hover:scale-105"
+          className="fixed bottom-6 right-6 z-50 bg-primary hover:bg-primary-dark text-white p-3.5 rounded-full shadow-lg shadow-primary/30 transition-transform hover:scale-105"
         >
           <MessageCircle size={22} />
         </button>
@@ -188,7 +188,7 @@ export default function ChatPanel({ toggleRef }) {
         }`}
       >
         {/* Header */}
-        <div className="bg-primary text-white px-4 py-3 flex items-center justify-between shrink-0">
+        <div className="bg-gradient-to-r from-primary to-purple-600 text-white px-4 py-3 flex items-center justify-between shrink-0">
           <h2 className="font-semibold text-sm">AI Assistant</h2>
           <div className="flex items-center gap-2">
             <button
@@ -291,7 +291,7 @@ export default function ChatPanel({ toggleRef }) {
             <button
               onClick={send}
               disabled={loading || !input.trim()}
-              className="bg-primary hover:bg-primary-dark text-white p-2 rounded-lg disabled:opacity-50 transition-colors"
+              className="btn-gradient p-2 rounded-lg disabled:opacity-50"
             >
               <Send size={16} />
             </button>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -39,15 +39,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-violet-50/30 dark:from-slate-950 dark:to-violet-950/20 px-4">
       <div className="w-full max-w-md">
         {/* Logo / Brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-sidebar text-white mb-4">
-            <LayoutDashboard size={28} />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 text-white font-bold text-2xl mb-4">
+            Q
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Productivity Hub
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+            Quorex
           </h1>
           <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
             Sign in to your account
@@ -58,7 +58,7 @@ export default function LoginPage() {
         <form
           onSubmit={handleSubmit}
           noValidate
-          className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg dark:shadow-slate-900/50 border border-gray-200 dark:border-slate-800 p-8"
+          className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-black/30 border border-gray-200 dark:border-slate-800 p-8"
         >
           {serverError && (
             <div className="mb-5 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3">
@@ -84,7 +84,7 @@ export default function LoginPage() {
                 className={`w-full pl-10 pr-4 py-2.5 rounded-lg border text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 outline-none transition-colors ${
                   errors.email
                     ? 'border-red-400 dark:border-red-500 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-800'
-                    : 'border-gray-300 dark:border-slate-700 focus:border-primary focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900'
+                    : 'border-gray-300 dark:border-slate-700 focus:border-primary focus:ring-2 focus:ring-violet-200 dark:focus:ring-violet-900'
                 }`}
               />
             </div>
@@ -111,7 +111,7 @@ export default function LoginPage() {
                 className={`w-full pl-10 pr-10 py-2.5 rounded-lg border text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 outline-none transition-colors ${
                   errors.password
                     ? 'border-red-400 dark:border-red-500 focus:ring-2 focus:ring-red-200 dark:focus:ring-red-800'
-                    : 'border-gray-300 dark:border-slate-700 focus:border-primary focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900'
+                    : 'border-gray-300 dark:border-slate-700 focus:border-primary focus:ring-2 focus:ring-violet-200 dark:focus:ring-violet-900'
                 }`}
               />
               <button
@@ -140,7 +140,7 @@ export default function LoginPage() {
           {/* Submit */}
           <button
             type="submit"
-            className="w-full py-2.5 rounded-lg bg-primary hover:bg-primary-dark text-white font-medium text-sm transition-colors cursor-pointer"
+            className="w-full py-2.5 rounded-lg btn-gradient"
           >
             Sign In
           </button>

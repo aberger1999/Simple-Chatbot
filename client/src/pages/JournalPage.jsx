@@ -127,7 +127,7 @@ export default function JournalPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Journal</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Journal</h1>
         <button
           onClick={handleSave}
           disabled={saveMutation.isPending}
@@ -135,7 +135,7 @@ export default function JournalPage() {
             justSaved
               ? 'bg-green-500 text-white'
               : isDirty
-              ? 'bg-primary hover:bg-primary-dark text-white'
+              ? 'btn-gradient text-white'
               : 'bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400'
           }`}
         >
@@ -197,7 +197,7 @@ export default function JournalPage() {
           ) : (
             <>
               {/* Morning Intentions */}
-              <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
+              <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-5">
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
                   Morning Intentions
                 </label>
@@ -214,7 +214,7 @@ export default function JournalPage() {
               </div>
 
               {/* Notes & Thoughts */}
-              <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
+              <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-5">
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
                   Notes & Thoughts
                 </label>
@@ -228,7 +228,7 @@ export default function JournalPage() {
               </div>
 
               {/* End of Day Reflection */}
-              <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
+              <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-5">
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
                   End of Day Reflection
                 </label>
@@ -250,7 +250,7 @@ export default function JournalPage() {
         {/* Right column — Context panel */}
         <div className="space-y-6">
           {/* Day's Events */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-5">
             <div className="flex items-center gap-2 mb-3">
               <Calendar size={16} className="text-primary" />
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
@@ -282,7 +282,7 @@ export default function JournalPage() {
           </div>
 
           {/* Active Goals */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-5">
             <div className="flex items-center gap-2 mb-3">
               <Target size={16} className="text-primary" />
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
@@ -312,7 +312,7 @@ export default function JournalPage() {
           </div>
 
           {/* Habits Summary */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-5">
             <div className="flex items-center gap-2 mb-3">
               <Activity size={16} className="text-primary" />
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">

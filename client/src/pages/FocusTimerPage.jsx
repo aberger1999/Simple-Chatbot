@@ -149,7 +149,7 @@ export default function FocusTimerPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Focus Timer</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Focus Timer</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
             Stay focused with timed work sessions
           </p>
@@ -158,37 +158,37 @@ export default function FocusTimerPage() {
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-4 flex items-center gap-3">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-4 flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
             <Clock size={20} className="text-blue-500" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalMinutes || 0}</p>
+            <p className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{stats.totalMinutes || 0}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">Total Minutes</p>
           </div>
         </div>
-        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-4 flex items-center gap-3">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-4 flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-green-50 dark:bg-green-500/10 flex items-center justify-center">
             <CheckCircle2 size={20} className="text-green-500" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalSessions || 0}</p>
+            <p className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{stats.totalSessions || 0}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">Sessions</p>
           </div>
         </div>
-        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-4 flex items-center gap-3">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-4 flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center">
             <TrendingUp size={20} className="text-violet-500" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{completionRate}%</p>
+            <p className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{completionRate}%</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</p>
           </div>
         </div>
       </div>
 
       {/* Timer card */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-8 mb-6">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-8 mb-6">
         <div className="flex flex-col items-center">
           <CircularTimer
             timeLeft={timer.timeLeft}
@@ -243,7 +243,7 @@ export default function FocusTimerPage() {
               <button
                 onClick={handleStart}
                 disabled={!selectedDuration}
-                className="flex items-center gap-2 px-6 py-2.5 bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+                className="flex items-center gap-2 px-6 py-2.5 btn-gradient disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
               >
                 <Play size={18} /> Start
               </button>
@@ -270,7 +270,7 @@ export default function FocusTimerPage() {
               <>
                 <button
                   onClick={() => timer.resume()}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition-colors"
+                  className="flex items-center gap-2 px-5 py-2.5 btn-gradient text-white rounded-lg font-medium transition-colors"
                 >
                   <Play size={18} /> Resume
                 </button>
@@ -296,7 +296,7 @@ export default function FocusTimerPage() {
       </div>
 
       {/* Session history */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-5">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-5">
         <div className="flex items-center gap-2 mb-4">
           <Timer size={18} className="text-primary" />
           <h2 className="font-semibold text-gray-900 dark:text-white">Session History</h2>

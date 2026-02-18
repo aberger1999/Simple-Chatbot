@@ -52,7 +52,7 @@ function Toast({ message }) {
 
 function SectionCard({ children, className = '' }) {
   return (
-    <div className={`bg-white dark:bg-slate-900 rounded-xl shadow-sm border dark:border-slate-800 p-6 ${className}`}>
+    <div className={`bg-white dark:bg-slate-900 rounded-xl shadow-sm card-elevated border dark:border-slate-800/80 p-6 ${className}`}>
       {children}
     </div>
   );
@@ -147,7 +147,7 @@ export default function SettingsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Settings</h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
           Manage your profile, notifications, and preferences
         </p>
@@ -345,7 +345,7 @@ function ProfileSection({ showToast }) {
             <button
               onClick={handleSave}
               disabled={updateMut.isPending}
-              className="px-5 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium disabled:opacity-40"
+              className="px-5 py-2 text-sm btn-gradient text-white rounded-lg font-medium disabled:opacity-40"
             >
               {updateMut.isPending ? 'Saving...' : 'Save Changes'}
             </button>
@@ -416,7 +416,7 @@ function NotificationsSection({ showToast }) {
           <button
             onClick={() => handleFieldSave('reminderTime')}
             disabled={updateMut.isPending}
-            className="px-3 py-1.5 text-xs bg-primary hover:bg-primary-dark text-white rounded-lg disabled:opacity-40"
+            className="px-3 py-1.5 text-xs btn-gradient text-white rounded-lg disabled:opacity-40"
           >
             Save
           </button>
@@ -455,7 +455,7 @@ function NotificationsSection({ showToast }) {
           <button
             onClick={() => handleFieldSave('reminderTime')}
             disabled={updateMut.isPending}
-            className="px-3 py-1.5 text-xs bg-primary hover:bg-primary-dark text-white rounded-lg disabled:opacity-40"
+            className="px-3 py-1.5 text-xs btn-gradient text-white rounded-lg disabled:opacity-40"
           >
             Save
           </button>
@@ -505,7 +505,7 @@ function NotificationsSection({ showToast }) {
               <button
                 onClick={() => handleFieldSave('phoneNumber')}
                 disabled={updateMut.isPending}
-                className="px-3 py-1.5 text-xs bg-primary hover:bg-primary-dark text-white rounded-lg disabled:opacity-40"
+                className="px-3 py-1.5 text-xs btn-gradient text-white rounded-lg disabled:opacity-40"
               >
                 Save
               </button>
@@ -619,7 +619,7 @@ function AccountSection({ showToast }) {
           <button
             onClick={handleChangePassword}
             disabled={changePwMut.isPending}
-            className="px-5 py-2 text-sm bg-primary hover:bg-primary-dark text-white rounded-lg font-medium disabled:opacity-40"
+            className="px-5 py-2 text-sm btn-gradient text-white rounded-lg font-medium disabled:opacity-40"
           >
             {changePwMut.isPending ? 'Updating...' : 'Update Password'}
           </button>

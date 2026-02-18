@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Productivity Hub", lifespan=lifespan)
+app = FastAPI(title="Quorex", lifespan=lifespan)
 
 # --- API routers (all prefixed under /api) ---
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
